@@ -26,22 +26,22 @@ strat_weight <- function(dfweight, weight) {
       all_B <- wins_B + losses_B + recent_wins_B + recent_losses_B
       
       # Ratio of wins with option A
-      if (wins_A + losses_A + recent_wins_A + recent_losses_A == 0) {
+      if (all_A == 0) {
         ratio_A <- 0
       } else {
         ratio_A <- (weight * recent_wins_A + (1 - weight) * wins_A) / all_A
       }
-      
       # Ratio of wins with option B
-      if (wins_B + losses_B + recent_wins_B + recent_losses_B == 0) {
+      if (all_B == 0) {
         ratio_B <- 0
       } else {
         ratio_B <- (weight * recent_wins_B + (1 - weight) * wins_B) / all_B
       }
+      
       # Determine next choice by comparing ratios
       if (all_A > all_B) { # A was chosen more frequently, everything from A's perspective
         if (all_A == i) { # A was chosen every single time
-          if (ratio_A == 1) {
+          if ((wins_A + recent_wins_A) == all_A) { # Ratio needn't equal 1. But with all wins we choose this option
             next_choice <- "A" # Always won. Choose A
           } else if (ratio_A == 0) {
             next_choice <- "B" # Always lost. Choose B
@@ -58,8 +58,8 @@ strat_weight <- function(dfweight, weight) {
           }
         }
       } else if (all_B < all_A) { # Reversal: everything from B's perspective
-        if (all_B == winsize) { # B was chosen every single time
-          if (ratio_B == 1) {
+        if (all_B == i) { # B was chosen every single time
+          if ((wins_B + recent_wins_B) == all_B) { # Ratio needn't equal 1. But with all wins we choose this option
             next_choice <- "B" # Always won. Choose B
           } else if (ratio_B == 0) {
             next_choice <- "A" # Always lost. Choose A
