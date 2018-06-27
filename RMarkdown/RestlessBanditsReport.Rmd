@@ -1,0 +1,81 @@
+---
+title: "Restless Bandits"
+author: "Chris Harris, Dr. Florian Kutzner"
+date: "Last edited: `r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+<!-- Style definitions -->
+<em>
+<style type="text/css">
+h1.title {
+
+  text-align: center;
+}
+h4.author {
+
+  text-align: center;
+}
+h4.date {
+
+  text-align: center;
+}
+.table {
+
+    width: 40%;
+    margin-left:10%;
+}
+img {
+
+    margin-left:10%;
+}
+#outcomes img{
+
+  height: 150px;
+}
+
+</style>
+</em>
+
+<!-- Beginn body -->
+
+# Abstract / To Do
+
+Journal: Memory & Cognition
+
+# Theory
+
+Narrative: Wir untersuchen Zyklizität, Leben ist häufig zyklisch, wurde bisher nicht untersucht sondern immer nur stationär oder mit Trends.
+
+# Methods 
+
+Für jetzt mit Simulationen rechnen, die nur 10,000 Runs haben. Erst für die Publikation mit 100,000 rechnen.
+
+## Experiment
+
+### Strategies 
+
+#### Windows
+
+Kareev
+
+#### Recency Weighting
+
+LeMens
+
+#### Constructivist Coding
+
+Juslin
+
+# Results
+
+Was tun Menschen? Was sollten sie tun?
+
+# Discussion
+
+Immer das warum? Warum sind manche Strategien gut und andere schlecht? 
+
+Diskussion: Entweder Menschen sind relativ gut im Umgang mit Zyklizität oder unsere theoretische Toolbox an Strategien ist unvollständig.
