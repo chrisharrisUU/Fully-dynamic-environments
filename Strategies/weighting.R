@@ -4,13 +4,19 @@ strat_weight <- function(dfweight, weight) {
   dfexpectations <- matrix(nrow = nrow(dfweight), ncol = ncol(dfweight)) %>%
     as_tibble()
   
+  # Start out with WSLS
+  dfexpectations[, 2] <- dfweight %>%
+    mutate(expected = ifelse(V1 == "wA", "A",
+                             ifelse(V1 == "lB", "A", "B"))) %>%
+    select(expected)
+  
   # Determine expected choices for each trial
-  for (i in 1 : (ncol(dfweight) - 1)) {
+  for (i in 2 : (ncol(dfweight) - 1)) {
     # Experienced window
     experienced_window <- dfweight[, 1 : i]
     
     # Determine expected next choice
-    expected <- apply(experienced_win, 1, function(x) {
+    expected <- apply(experienced_window, 1, function(x) {
       # Previous outcomes within window
       losses_A <- length(which(x[1 : (length(x) - 1)] == "lA"))
       wins_A <- length(which(x[1 : (length(x) - 1)] == "wA"))
@@ -86,6 +92,9 @@ strat_weight <- function(dfweight, weight) {
           next_choice <- "Guess" # No prediction
         }
       }
+      
+      # Return expected choice
+      return(next_choice)
     })
     
     # Save expectations

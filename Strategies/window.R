@@ -78,6 +78,9 @@ strat_window <- function(dfwindow, winsize) {
           next_choice <- "Guess" # No prediction
         }
       }
+      
+      # Return expected choice
+      return(next_choice)
     })
     
     # Save expectations
