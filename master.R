@@ -2,7 +2,7 @@
 
 # Load dependencies
 if (!require(needs)) {install.packages("needs"); library(needs)}
-needs(dplyr, magrittr)
+needs(dplyr, magrittr, stringr)
 
 ### Functions----
 source("Auxiliary/match_handler.R")
@@ -51,12 +51,38 @@ match_handler(df, "omniscient", "positive")
 match_handler(df, "omniscient", "neutral")
 match_handler(df, "omniscient", "negative")
 
+
+match_handler(df, "constructivist", "neutral")
+# To do:
+#   - ratios for construction?
+#   - how to integrate constructed memory?
+#   - can constructed ever be a win?
+#   - error
+
+
+sim_handler(strategy = "window",
+            environment = "neutral",
+            strat_var = 1,
+            size = c(7, 12))
 sim_handler(strategy = "weighting",
             environment = "neutral",
             strat_var = .9,
             size = c(7, 12))
 
+### Analyses
 
+# Number of guesses
+sequ <- seq(.1, 1, .05)
+guess_no <- vector(mode = "numeric", length = length(sequ))
+for (i in sequ) {
+  guess_no[which(sequ == i)] <- sim_handler_flo(strategy = "weighting",
+                                            environment = "neutral",
+                                            strat_var = i,
+                                            size = c(100, 120)) %>%
+    summarise(avg = mean(no_of_guesses)) %>%
+    unlist
+}
+plot(guess_no)
 
 ### List of strategies
 # Window :)

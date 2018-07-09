@@ -11,6 +11,14 @@ match_handler <- function(df, strategy, strat_var = NA) {
     for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
       dfexpectations[, i + 1] <- strat_weight(df[, 1:i], weight = strat_var)
     }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    df_constructed <- dfexpectations
+    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
+      output <- strat_constr(df[, 1:i], weight = strat_var)
+      dfexpectations[, i + 1] <- output[,1]
+      df_constructed[, i + 1] <- output[,2]
+    }
   } else if (strategy == "omniscient") {
     # Omniscient
     # Determine best choice

@@ -15,6 +15,7 @@ guesses <- function(choice) {
   return(choice)
 }
 
+# Function for determining outcomes
 outcome <- function(choices, prob) {
   prob <- unlist(prob)
   # Set up dice and avoid uncertainty with 0.5
@@ -30,6 +31,7 @@ outcome <- function(choices, prob) {
     return
 }
 
+ # Main handler of simulation runs
 sim_handler <- function(strategy, environment, strat_var = NA, size) {
   df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
     as_tibble() # Tibble to store expected choices
@@ -44,11 +46,7 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
   df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
     guesses %>%
     outcome(prob = probabilities[1,])
-  ### Works till here
-  
-  
-  
-  ### Now: 
+
   if (strategy == "window") {
     # Windows
     for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
@@ -91,4 +89,68 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
   }
   
   return(df_sim)
+}
+
+# Version two. Mainly identical but keeps tracks of number of guesses. Slightly less readable.
+sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
+  df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
+    as_tibble() # Tibble to store expected choices
+  no_of_guesses <- vector(mode = "integer", length = nrow(df_sim))
+  # Determine best choice
+  if (environment == "positive") {
+    probabilities <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+  } else if (environment == "neutral") {
+    probabilities <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+  } else {
+    probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+  }
+  df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
+    guesses %>%
+    outcome(prob = probabilities[1,])
+  
+  if (strategy == "window") {
+    # Windows
+    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_window(df_sim[, 1:i], winsize = strat_var)
+      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
+      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
+      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
+    }
+  } else if (strategy == "weighting") {
+    # Weighting
+    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var)
+      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
+      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
+      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
+    }
+  } else if (strategy == "omniscient") {
+    # Omniscient
+    # Determine best choice
+    if (strat_var == "positive") {
+      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+    } else if (strat_var == "neutral") {
+      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+    } else {
+      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+    }
+    best_choice %<>%
+      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_omni(dim(df_sim), best_choice) %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "guessing") {
+    # Guessing
+    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_guessing(nrow(df_sim)) %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else {
+    warning("Please specify a strategy to be used!")
+  }
+  
+  cbind(df_sim, no_of_guesses) %>%
+    return
 }
