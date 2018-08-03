@@ -10,6 +10,7 @@ source("Auxiliary/sim_handler.R")
 # Strategies
 source("Strategies/guessing.R")
 source("Strategies/weighting.R")
+source("Strategies/constructivist.R")
 source("Strategies/window.R")
 source("Strategies/omniscient.R")
 

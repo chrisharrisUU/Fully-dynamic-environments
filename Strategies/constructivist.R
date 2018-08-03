@@ -1,5 +1,5 @@
 ### Constructivist
-strat_constr <- function(dfconstr, weight) {
+strat_constr <- function(dfconstr) {
   i <- ncol(dfconstr)
   # Experienced window
   experienced_window <- dfconstr[, 1 : i]
@@ -7,36 +7,31 @@ strat_constr <- function(dfconstr, weight) {
   # Determine expected next choice
   expected <- apply(experienced_window, 1, function(x) {
     # Previous outcomes within window
-    losses_A <- length(which(x[1 : (length(x) - 1)] == "lA"))
-    wins_A <- length(which(x[1 : (length(x) - 1)] == "wA"))
-    losses_B <- length(which(x[1 : (length(x) - 1)] == "lB"))
-    wins_B <- length(which(x[1 : (length(x) - 1)] == "wB"))
-    # Most recent outcome
-    recent_losses_A <- length(which(x[length(x)] == "lA"))
-    recent_wins_A <- length(which(x[length(x)] == "wA"))
-    recent_losses_B <- length(which(x[length(x)] == "lB"))
-    recent_wins_B <- length(which(x[length(x)] == "wB"))
+    losses_A <- length(which(x[1 : length(x)] == "lA"))
+    wins_A <- length(which(x[1 : length(x)] == "wA"))
+    losses_B <- length(which(x[1 : length(x)] == "lB"))
+    wins_B <- length(which(x[1 : length(x)] == "wB"))
     # Totals
-    all_A <- wins_A + losses_A + recent_wins_A + recent_losses_A
-    all_B <- wins_B + losses_B + recent_wins_B + recent_losses_B
+    all_A <- wins_A + losses_A
+    all_B <- wins_B + losses_B
     
     # Ratio of wins with option A
     if (all_A == 0) {
       ratio_A <- 0
     } else {
-      ratio_A <- (weight * recent_wins_A + (1 - weight) * wins_A) / all_A
+      ratio_A <- wins_A / all_A
     }
     # Ratio of wins with option B
     if (all_B == 0) {
       ratio_B <- 0
     } else {
-      ratio_B <- (weight * recent_wins_B + (1 - weight) * wins_B) / all_B
+      ratio_B <- wins_B / all_B
     }
     
     # Determine next choice by comparing ratios
     if (all_A > all_B) { # A was chosen more frequently, everything from A's perspective
       if (all_A == i) { # A was chosen every single time
-        if ((wins_A + recent_wins_A) == all_A) { # Ratio needn't equal 1. But with all wins we choose this option
+        if (wins_A == all_A) { # Ratio needn't equal 1. But with all wins we choose this option
           next_choice <- "A" # Always won. Choose A
         } else if (ratio_A == 0) {
           next_choice <- "B" # Always lost. Choose B
@@ -54,7 +49,7 @@ strat_constr <- function(dfconstr, weight) {
       }
     } else if (all_B < all_A) { # Reversal: everything from B's perspective
       if (all_B == i) { # B was chosen every single time
-        if ((wins_B + recent_wins_B) == all_B) { # Ratio needn't equal 1. But with all wins we choose this option
+        if (wins_B == all_B) { # Ratio needn't equal 1. But with all wins we choose this option
           next_choice <- "B" # Always won. Choose B
         } else if (ratio_B == 0) {
           next_choice <- "A" # Always lost. Choose A

@@ -15,7 +15,7 @@ match_handler <- function(df, strategy, strat_var = NA) {
     # Constructivist
     df_constructed <- dfexpectations
     for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      output <- strat_constr(df[, 1:i], weight = strat_var)
+      output <- strat_constr(df[, 1:i])
       dfexpectations[, i + 1] <- output[,1]
       df_constructed[, i + 1] <- output[,2]
     }
