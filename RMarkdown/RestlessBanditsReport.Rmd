@@ -3,6 +3,7 @@ title: "Restless Bandits"
 author: "Chris Harris, Dr. Florian Kutzner"
 date: "Last edited: `r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
+indent: true
 ---
 
 ```{r setup, include=FALSE}
@@ -44,31 +45,43 @@ img {
 
 # Abstract / To Do
 
-Journal: Memory & Cognition
+Journal: Memory & Cognition  
+Narrative: Wir untersuchen Zyklizität, Leben ist häufig zyklisch, wurde bisher nicht untersucht sondern immer nur stationär oder mit Trends.  
+Für jetzt mit Simulationen rechnen, die nur 10,000 Runs haben. Erst für die Publikation mit 100,000 rechnen.  
+Strategien:  
+Windows - Kareev  
+Recency weighting - LeMens  
+Constructivist - Juslin  
+Was tun Menschen? Was sollten sie tun?  
+Immer das warum? Warum sind manche Strategien gut und andere schlecht?  
+Diskussion: Entweder Menschen sind relativ gut im Umgang mit Zyklizität oder unsere theoretische Toolbox an Strategien ist unvollständig.
 
 # Theory
+Much about our surrounding environment follows cyclic patterns. As the earth orbits the sun, day and night alternate while seasons come and go. These largescale patterns then dictate patterns in our lives: We tend to structure our awake time around day and night times and we tend to engage in different activities depending on the time of the year. For many, the seasons influence the available foods and for many workers (e.g. farmers) the seasons prescribe the type of work currently to be done. Cyclic patterns are everywhere in life.  
 
-Narrative: Wir untersuchen Zyklizität, Leben ist häufig zyklisch, wurde bisher nicht untersucht sondern immer nur stationär oder mit Trends.
+However, the current decision making literature does not seem to represent this supposition adequately. Most paradigms that involve decisions between two or more options have either static outcome probabilities or include but a single change (gradual or abrupt) <citations>. Only few studies include cyclic variations in the outcome probabilities (e.g. Bott & Heit, 2004). This not only limits the external validity of studies but, far more fundamentally, affects the decision strategies to be invested. For example, probability matching becomes a powerful, adaptive strategy once there are patterns to be detected (Gaissmeier, xxx) while at the same time its precise definition in a cyclic environment becomes unclear. And foraging theories need to account for continuous exploration, or at the least flexibility during exploitation phases as maximizing alone will not be an adaptive behavior.  
 
-# Methods 
+Here, we create a two-armed bandit task with continuously, sinusoidally interweaving outcome probabilities and simulate three decision making strategies (decision windows, recency weighting, and constructivist coding) as well as two normative strategies (guessing and omniscient). We then have participants complete the bandit task and match these strategies to their behavior. The two normativce strategies serve as benchmarks for behavior.
 
-Für jetzt mit Simulationen rechnen, die nur 10,000 Runs haben. Erst für die Publikation mit 100,000 rechnen.
+## Strategies 
 
-## Experiment
-
-### Strategies 
-
-#### Windows
+### Windows
 
 Kareev
 
-#### Recency Weighting
+### Recency Weighting
 
 LeMens
 
-#### Constructivist Coding
+### Constructivist Coding
 
 Juslin
+
+# Methods 
+
+
+## Experiment
+
 
 # Results
 
@@ -76,6 +89,4 @@ Was tun Menschen? Was sollten sie tun?
 
 # Discussion
 
-Immer das warum? Warum sind manche Strategien gut und andere schlecht? 
 
-Diskussion: Entweder Menschen sind relativ gut im Umgang mit Zyklizität oder unsere theoretische Toolbox an Strategien ist unvollständig.
