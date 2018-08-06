@@ -64,10 +64,15 @@ However, the current decision making literature does not seem to represent this 
 Here, we create a two-armed bandit task with continuously, sinusoidally interweaving outcome probabilities and simulate three decision making strategies (decision windows, recency weighting, and constructivist coding) as well as two normative strategies (guessing and omniscient). We then have participants complete the bandit task and match these strategies to their behavior. The two normativce strategies serve as benchmarks for behavior.
 
 ## Strategies 
+Two- or multi-armed bandit tasks have become somewhat of a gold standard in the decision making literature. They allow for a controlled environment in which to analyse participants' behavior and then match their behavior to predictions made by decision strategies.  
+
+(...)  
+
+Three such families of strategies we will investigate closer.
 
 ### Windows
 
-Kareev
+Kareev (1995, 1997) argues that small samples hava an advantage in detecting correlation due to the stronger skew of the covariation the smaller the sample is. This proposition was quickly picked up by others. For example, Hertwig and Todd (2005) and Kareev (2000) argue that cognitive limitations are, in fact, adaptive as they allow for quicker learning of contingencies. Furthermore, the cognitive limitations make it implausible that humans can always keep track of the full outcome history in order to determine the next choice. Instead, it is a reasonable assumption that only the last few trials, a recent historic window, are used to determine the next choice (Otto et al., 2011).  
 
 ### Recency Weighting
 
@@ -75,18 +80,19 @@ LeMens
 
 ### Constructivist Coding
 
-Juslin
+Until now, all strategies assumed that the decision maker receives feedback on every trial and ignores non-feedback trials (such as the option not chosen). Costructivist Coding, however, proposes that in the absense of feedback, decision makers memorize the expected outcome. Future decisions will then be based not only on experienced outcomes but also on constructed outcomes where necessary (Elwin, Juslin, Olsson, & Enkvist, 2007; Ghaffarzadegan & Stewart, 2011; Henriksson, Elwin, & Juslin, 2010). In bandit tasks in which the decision maker only receives feedback for the chosen outcome, an outcome for the alternative option might be constructed for every single trial.  
 
 # Methods 
 
+## Simulations
+Part I: Simulation of strategies. Performance. Which strategies perform best. Why?  
 
 ## Experiment
-
+Part II: Matching to participant data. What do participants seem to do?
 
 # Results
-
-Was tun Menschen? Was sollten sie tun?
+Which strategies perform best and why, what do people seem to do.
 
 # Discussion
-
+Match or discrepancy of simulation and experiment?
 
