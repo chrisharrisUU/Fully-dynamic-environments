@@ -53,7 +53,7 @@ match_handler(df, "omniscient", "neutral")
 match_handler(df, "omniscient", "negative")
 
 
-match_handler(df, "constructivist", "neutral")
+match_handler(df, "constructivist")
 # To do:
 #   - ratios for construction?
 #   - how to integrate constructed memory?
@@ -69,14 +69,18 @@ sim_handler(strategy = "weighting",
             environment = "neutral",
             strat_var = .9,
             size = c(7, 12))
+sim_handler(strategy = "constructivist",
+            environment = "neutral",
+            size = c(7, 12))
 
 ### Analyses
 
 # Number of guesses
+# Neutral weighting
 sequ <- seq(.1, 1, .05)
 guess_no <- vector(mode = "numeric", length = length(sequ))
 for (i in sequ) {
-  guess_no[which(sequ == i)] <- sim_handler_flo(strategy = "weighting",
+  guess_no[which(sequ == i)] <- sim_handler_guesses(strategy = "weighting",
                                             environment = "neutral",
                                             strat_var = i,
                                             size = c(100, 120)) %>%
@@ -84,10 +88,15 @@ for (i in sequ) {
     unlist
 }
 plot(guess_no)
-
-### List of strategies
-# Window :)
-# Recency weighting :)
-# Constructivist
-# Guess :)
-# Omniscient :)
+# Neutral windows
+sequ <- seq(1, 9, 1)
+guess_no <- vector(mode = "numeric", length = length(sequ))
+for (i in sequ) {
+  guess_no[which(sequ == i)] <- sim_handler_guesses(strategy = "window",
+                                                    environment = "neutral",
+                                                    strat_var = i,
+                                                    size = c(100, 120)) %>%
+    summarise(avg = mean(no_of_guesses)) %>%
+    unlist
+}
+plot(guess_no)

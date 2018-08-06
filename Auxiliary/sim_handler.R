@@ -43,6 +43,8 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
   } else {
     probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
   }
+  
+  # First round is always forced to guess
   df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
     guesses %>%
     outcome(prob = probabilities[1,])
@@ -58,6 +60,15 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
     # Weighting
     for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
       df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var) %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    for (i in 1:ncol(df_sim)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i]) %>%
+        select(V1) %>%
+        unlist %>%
         guesses %>%
         outcome(prob = probabilities[i,])
     }
@@ -104,6 +115,8 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
   } else {
     probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
   }
+  
+  # First round is always forced to guess
   df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
     guesses %>%
     outcome(prob = probabilities[1,])
@@ -120,6 +133,14 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
     # Weighting
     for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
       df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var)
+      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
+      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
+      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
+    }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    for (i in 1:ncol(df_sim)) { # Iterate over strategy
+      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i])
       no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
       df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
       df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
