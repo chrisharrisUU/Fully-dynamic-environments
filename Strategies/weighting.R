@@ -7,10 +7,14 @@ strat_weight <- function(dfweight, weight) {
   # Determine expected next choice
   expected <- apply(experienced_window, 1, function(x) {
     # Previous outcomes within window
-    losses_A <- length(which(x[1 : (length(x) - 1)] == "lA"))
-    wins_A <- length(which(x[1 : (length(x) - 1)] == "wA"))
-    losses_B <- length(which(x[1 : (length(x) - 1)] == "lB"))
-    wins_B <- length(which(x[1 : (length(x) - 1)] == "wB"))
+    if (length(x) > 1) {
+      losses_A <- length(which(x[1 : (length(x) - 1)] == "lA"))
+      wins_A <- length(which(x[1 : (length(x) - 1)] == "wA"))
+      losses_B <- length(which(x[1 : (length(x) - 1)] == "lB"))
+      wins_B <- length(which(x[1 : (length(x) - 1)] == "wB"))
+    } else {
+      losses_A <- wins_A <- losses_B <- wins_B <- 0
+    }
     # Most recent outcome
     recent_losses_A <- length(which(x[length(x)] == "lA"))
     recent_wins_A <- length(which(x[length(x)] == "wA"))
