@@ -43,9 +43,234 @@ img {
 
 <!-- Beginn body -->
 
-# Abstract / To Do
+#  {.tabset .tabset-fade}
 
-Journal: Memory & Cognition  
+## Questions
+
+### Strategies
+
+All strategies follow this general logic adapted from the historical windows in order to determine the next expected choice:  
+
+**Predicted choice for Window strategies on trial x+1 given outcomes in historical window k**
+<table>
+  <tr>
+    <td>
+      <p>Frequency of option</p>
+    </td>
+    <td>
+      <p>Ratio of option</p>
+    </td>
+    <td>
+      <p>Predicted option for trial x+1</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p>Count(A)<subx</sub> = k</p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> = 1</p>
+    </td>
+    <td>
+      <p>Option A</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> = 0</p>
+    </td>
+    <td>
+      <p>Option B</p>
+    </td>
+  </tr>
+    <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>0 &lt; Ratio(A)<subx</sub> &lt; 1</p>
+    </td>
+    <td>
+      <p>Guess</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p>Count(A)<subx</sub> &gt; Count(B)<subx</sub> AND Count(A)<subx</sub> ≠ k</p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> &gt; Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option A</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(B)<subx</sub> &gt; Ratio(A)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option B</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> = Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Guess</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p>Count(B)<subx</sub> = k</p>
+    </td>
+    <td>
+      <p>Ratio(B)<subx</sub> = 1</p>
+    </td>
+    <td>
+      <p>Option B</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(B)<subx</sub> = 0</p>
+    </td>
+    <td>
+      <p>Option A</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>0 &lt; Ratio(B)<subx</sub> &lt; 1</p>
+    </td>
+    <td>
+      <p>Guess</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p>Count(B)<subx</sub> &gt; Count(A)<subx</sub> AND Count(B)<subx</sub> ≠ k</p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> &gt; Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option A</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(B)<subx</sub> &gt; Ratio(A)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option B</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> = Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Guess</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p>Count(A)<subx</sub> = Count(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> &gt; Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option A</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(B)<subx</sub> &gt; Ratio(A)<subx</sub></p>
+    </td>
+    <td>
+      <p>Option B</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p> </p>
+    </td>
+    <td>
+      <p>Ratio(A)<subx</sub> = Ratio(B)<subx</sub></p>
+    </td>
+    <td>
+      <p>Guess</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p><em>Note. </em>k = size of window, x = Trial number<br>
+      Count()<subx</sub> = Occurrences of chosen option within the window at trial x in window k<br>
+      Ratio()<subx</sub> = (Wins with chosen option) / (Occurances of this option) at trial x in window k</p>
+    </td>
+  </tr>
+</table>
+
+#### Windows
+
+*No questions* &#10004;  
+
+k = {1; 9}
+
+#### Recency Weighting
+
+*No questions* &#10004;  
+
+k = all previous trials  
+Ratio()<subx</sub> = (weight \* win in last trial + (1 - weight) \* all previous wins) / (Occurances of this option) at trial x in window k</p>
+
+#### Constructivist Coding
+
+For this strategy I not only calculate the expected outcome for the chosen option but also for the other option. Then both the experienced and the constructed feedback are used for the next expected (and the constructed) outcome.  
+
+Which information, however, do we want to use for making decisions? Do we a) regard all previous experienced and constructed outcomes, b) use a auxiliary window strategy underneath thus only paying attention to the k previous trials, or c) do we use a weighting strategy underneath, paying attention to all previous trials but weighting the recent one?
+
+The experienced outcome is determined (as seen in the table above) relatively by comparing the two ratios. For the constructed outcome I could either do a reversed relative comparison or try to come up with an absolute parameter.   E.g. I select option A, ratioA > ratioB, the expected choice would be A after which the outcome will be calculated.  For the constructed choice, I would either expect a loss with B because ratioB < ratioA and then (I believe) always expect losses with the not chosen option. Or I compare the ratio to a fixed parameter ratioB >? .5 and base my decision on that comparison. This does not, however, work well yet because the weight would render .5 not a good parameter. The ratios are too strongly dependent on the weights, so perhaps weight * .5 could work as parameter.  
+
+### Guesses
+Different strategies (and varying parameters) lead to different amounts of guessing (cases in which we make no prediction). For example, a window of k = 1 (WSLS) and a recency weight of &beta; = 1 should lead to the exact same results. However, the formula leads to a lot of guesses because while only the most recent trial is considered any loss would lead to a ratio of 0:  
+Ratio() = (weight \* win in last trial + (1 - weight) \* all previous wins) / (Occurances of this option)  
+= (1 \* 0 + (1-1) \* x)  
+= 0  
+This in turn will lead to guessing.  
+
+Do we try to reduce the number of guesses or how do we best account for them? Currently, I am only counting them.  
+
+## Paper
+
+Journal: Memory & Cognition?  
 Narrative: Wir untersuchen Zyklizität, Leben ist häufig zyklisch, wurde bisher nicht untersucht sondern immer nur stationär oder mit Trends.  
 Für jetzt mit Simulationen rechnen, die nur 10,000 Runs haben. Erst für die Publikation mit 100,000 rechnen.  
 Strategien:  
@@ -56,43 +281,43 @@ Was tun Menschen? Was sollten sie tun?
 Immer das warum? Warum sind manche Strategien gut und andere schlecht?  
 Diskussion: Entweder Menschen sind relativ gut im Umgang mit Zyklizität oder unsere theoretische Toolbox an Strategien ist unvollständig.
 
-# Theory
+### Theory
 Much about our surrounding environment follows cyclic patterns. As the earth orbits the sun, day and night alternate while seasons come and go. These largescale patterns then dictate patterns in our lives: We tend to structure our awake time around day and night times and we tend to engage in different activities depending on the time of the year. For many, the seasons influence the available foods and for many workers (e.g. farmers) the seasons prescribe the type of work currently to be done. Cyclic patterns are everywhere in life.  
 
 However, the current decision making literature does not seem to represent this supposition adequately. Most paradigms that involve decisions between two or more options have either static outcome probabilities or include but a single change (gradual or abrupt) <citations>. Only few studies include cyclic variations in the outcome probabilities (e.g. Bott & Heit, 2004). This not only limits the external validity of studies but, far more fundamentally, affects the decision strategies to be invested. For example, probability matching becomes a powerful, adaptive strategy once there are patterns to be detected (Gaissmeier, xxx) while at the same time its precise definition in a cyclic environment becomes unclear. And foraging theories need to account for continuous exploration, or at the least flexibility during exploitation phases as maximizing alone will not be an adaptive behavior.  
 
 Here, we create a two-armed bandit task with continuously, sinusoidally interweaving outcome probabilities and simulate three decision making strategies (decision windows, recency weighting, and constructivist coding) as well as two normative strategies (guessing and omniscient). We then have participants complete the bandit task and match these strategies to their behavior. The two normativce strategies serve as benchmarks for behavior.
 
-## Strategies 
+### Strategies 
 Two- or multi-armed bandit tasks have become somewhat of a gold standard in the decision making literature. They allow for a controlled environment in which to analyse participants' behavior and then match their behavior to predictions made by decision strategies.  
 
 (...)  
 
 Three such families of strategies we will investigate closer.
 
-### Windows
+#### Windows
 
 Kareev (1995, 1997) argues that small samples hava an advantage in detecting correlation due to the stronger skew of the covariation the smaller the sample is. This proposition was quickly picked up by others. For example, Hertwig and Todd (2005) and Kareev (2000) argue that cognitive limitations are, in fact, adaptive as they allow for quicker learning of contingencies. Furthermore, the cognitive limitations make it implausible that humans can always keep track of the full outcome history in order to determine the next choice. Instead, it is a reasonable assumption that only the last few trials, a recent historic window, are used to determine the next choice (Otto et al., 2011).  
 
-### Recency Weighting
+#### Recency Weighting
 
 LeMens
 
-### Constructivist Coding
+#### Constructivist Coding
 
 Until now, all strategies assumed that the decision maker receives feedback on every trial and ignores non-feedback trials (such as the option not chosen). Costructivist Coding, however, proposes that in the absense of feedback, decision makers memorize the expected outcome. Future decisions will then be based not only on experienced outcomes but also on constructed outcomes where necessary (Elwin, Juslin, Olsson, & Enkvist, 2007; Ghaffarzadegan & Stewart, 2011; Henriksson, Elwin, & Juslin, 2010). In bandit tasks in which the decision maker only receives feedback for the chosen outcome, an outcome for the alternative option might be constructed for every single trial.  
 
-# Methods 
+### Methods 
 
-## Simulations
+#### Simulations
 Part I: Simulation of strategies. Performance. Which strategies perform best. Why?  
 
-## Experiment
+#### Experiment
 Part II: Matching to participant data. What do participants seem to do?
 
-# Results
+### Results
 Which strategies perform best and why, what do people seem to do.
 
-# Discussion
+### Discussion
 Match or discrepancy of simulation and experiment?
 
