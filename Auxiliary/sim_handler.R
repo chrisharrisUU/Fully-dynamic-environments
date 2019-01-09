@@ -49,24 +49,17 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
     guesses %>%
     outcome(prob = probabilities[1,])
 
-  if (strategy == "window") {
+  if (strategy == "positivist") {
     # Windows
     for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_window(df_sim[, 1:i], winsize = strat_var) %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "weighting") {
-    # Weighting
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var) %>%
+      df_sim[, i + 1] <- strat_positivist(df_sim[, 1:i], winsize = strat_var) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
     }
   } else if (strategy == "constructivist") {
     # Constructivist
     for (i in 1:ncol(df_sim)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i]) %>%
+      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i], winsize = strat_var) %>%
         select(V1) %>%
         unlist %>%
         guesses %>%

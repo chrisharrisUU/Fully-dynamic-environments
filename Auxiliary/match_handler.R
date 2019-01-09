@@ -1,21 +1,16 @@
 match_handler <- function(df, strategy, strat_var = NA) {
   dfexpectations <- matrix(nrow = nrow(df), ncol = ncol(df)) %>%
     as_tibble() # Tibble to store expected choices
-  if (strategy == "window") {
+  if (strategy == "positivist") {
     # Windows
     for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_window(df[, 1:i], winsize = strat_var)
-    }
-  } else if (strategy == "weighting") {
-    # Weighting
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_weight(df[, 1:i], weight = strat_var)
+      dfexpectations[, i + 1] <- strat_positivist(df[, 1:i], winsize = strat_var)
     }
   } else if (strategy == "constructivist") {
     # Constructivist
     df_constructed <- dfexpectations
     for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      output <- strat_constr(df[, 1:i])
+      output <- strat_constr(df[, 1:i], winsize = strat_var)
       dfexpectations[, i + 1] <- output[,1]
       df_constructed[, i + 1] <- output[,2]
     }
