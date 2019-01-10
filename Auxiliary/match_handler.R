@@ -1,16 +1,25 @@
-match_handler <- function(df, strategy, strat_var = NA) {
-  dfexpectations <- matrix(nrow = nrow(df), ncol = ncol(df)) %>%
+match_handler <- function(ml, strategy, strat_var = NA) {
+  dfexpectations <- matrix(nrow = nrow(ml[[1]]), ncol = ncol(ml[[1]])) %>%
     as_tibble() # Tibble to store expected choices
   if (strategy == "positivist") {
     # Windows
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_positivist(df[, 1:i], winsize = strat_var)
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var
+      if (j < 1) {j <- 1}
+      # Determine expected choices 
+      dfexpectations[, i + 1] <- strat_positivist(ml[[1]][, j:i])
     }
   } else if (strategy == "constructivist") {
     # Constructivist
     df_constructed <- dfexpectations
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      output <- strat_constr(df[, 1:i], winsize = strat_var)
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var
+      if (j < 1) {j <- 1}
+      # Determine expected choices 
+      output <- strat_constr(cbind(ml[[1]][, j:i],
+                                   ml[[2]][, j:i]))
       dfexpectations[, i + 1] <- output[,1]
       df_constructed[, i + 1] <- output[,2]
     }
@@ -26,17 +35,17 @@ match_handler <- function(df, strategy, strat_var = NA) {
     }
     best_choice %<>%
       transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_omni(dim(df), best_choice)
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      dfexpectations[, i + 1] <- strat_omni(dim(ml[[1]][1:i]), best_choice)
     }
   } else if (strategy == "guessing") {
     # Guessing
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_guessing(nrow(df))
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      dfexpectations[, i + 1] <- strat_guessing(nrow(ml[[1]]))
     }
   } else {
     warning("Please specify a strategy to be used!")
   }
   
-  return(dfexpectations)
+  dfexpectations
 }
