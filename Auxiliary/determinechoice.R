@@ -92,5 +92,5 @@ windowchoice <- function(x, constructivist = FALSE) {
   }
   
   # Return expected choice
-  return(next_choice)
+  next_choice
 }
