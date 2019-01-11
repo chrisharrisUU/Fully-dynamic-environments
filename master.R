@@ -8,6 +8,7 @@ needs(dplyr, magrittr, stringr, here, ggplot2)
 source("Auxiliary/match_handler.R")
 source("Auxiliary/sim_handler.R")
 source("Auxiliary/determinechoice.R")
+source("Auxiliary/helpers.R")
 # Strategies
 source("Strategies/positivist.R")
 source("Strategies/constructivist.R")
@@ -112,7 +113,7 @@ df %>%
   theme_minimal()
 
 # Constructivist
-df <- nr_guesses_per_strat("constructivist")
+df <- nr_guesses_per_strat("constructivist", seq = sequ, dims = c(100, 120))
 df %>%
   ggplot(aes(x = sequence,
              y = guess_no,
@@ -125,7 +126,7 @@ df %>%
   scale_color_brewer(palette = "Dark2") +
   theme_minimal()
 
-## MAtching strategies
+## Matching strategies
 matching_index <- vector(mode = "integer", length = 14)
 for (i in 1:14) {
   matching_index[i] <- match_handler(memory, "positivist", i) %>%
