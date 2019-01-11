@@ -5,7 +5,6 @@ date: "Last edited: `r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_folding: show
-    indent: true
 ---
 
 ```{r setup, include=FALSE}
@@ -20,42 +19,50 @@ prioritize(dplyr)
 ### Functions----
 source(here("Auxiliary/match_handler.R"))
 source(here("Auxiliary/sim_handler.R"))
+source(here("Auxiliary/determinechoice.R"))
+source(here("Auxiliary/helpers.R"))
 # Strategies
-source(here("Strategies/guessing.R"))
-source(here("Strategies/weighting.R"))
+source(here("Strategies/positivist.R"))
 source(here("Strategies/constructivist.R"))
-source(here("Strategies/window.R"))
+source(here("Strategies/guessing.R"))
 source(here("Strategies/omniscient.R"))
 
 ### Constants----
 # Set up sine curves
 x <- seq(0,pi*2*5,by = .1) # Trials
 var <- 2 # Amplitude of sine curve
-range <- max(max(abs(.2*x+var*sin(x))),max(abs(-.2*x+var*sin(x))))
+range <- max(max(abs(.2 * x + var * sin(x))),max(abs(-.2 * x + var * sin(x))))
 
 # Positive
-CURVE_A_pos <- (0.2*x+var*sin(x))/(2*range)+.5 # Sine curve for option A
-CURVE_B_pos <- (0.2*x+var*sin(x+pi))/(2*range)+.5 # Sine curve for option B
+CURVE_A_pos <- (0.2 * x + var * sin(x)) / (2 * range) + .5 # Sine curve for option A
+CURVE_B_pos <- (0.2 * x + var * sin(x + pi)) / (2 * range) + .5 # Sine curve for option B
 # Neutral
-CURVE_A_neu <- (var*sin(x))/(2*range)+.5 # Sine curve for option A
-CURVE_B_neu <- (var*sin(x+pi))/(2*range)+.5 # Sine curve for option B
+CURVE_A_neu <- (var * sin(x)) / (2 * range) + .5 # Sine curve for option A
+CURVE_B_neu <- (var * sin(x + pi)) / (2 * range) + .5 # Sine curve for option B
 # Negative
-CURVE_A_neg <- (-0.2*x+var*sin(x))/(2*range)+.5 # Sine curve for option A
-CURVE_B_neg <- (-0.2*x+var*sin(x+pi))/(2*range)+.5 # Sine curve for option B
+CURVE_A_neg <- (-0.2 * x + var * sin(x)) / (2 * range) + .5 # Sine curve for option A
+CURVE_B_neg <- (-0.2 * x + var * sin(x + pi))/(2 * range) + .5 # Sine curve for option B
 
 # Create practice dataset
-df <- rbind(rep("wA", 12),
-            rep("lA", 12),
-            rep(c("lA", "lB"), 6),
-            rep(c("wA", "wB"), 6),
-            rep(c("wA", "lA", "wB", "lB"), 3),
-            rep(c("wA", "wA", "lB"), 4),
-            rep(c("lB", "wB", "lB", "wA"), 3)) %>%
+experienced <- rbind(rep("wA", 36),
+            rep("lA", 36),
+            rep(c("lA", "lB"), 18),
+            rep(c("wA", "wB"), 18),
+            rep(c("wA", "lA", "wB", "lB"), 9),
+            rep(c("wA", "wA", "lB"), 12),
+            rep(c("lB", "wB", "lB", "wA"), 9)) %>%
   as_tibble
+constructed <- matrix(nrow = nrow(experienced),
+                      ncol = ncol(experienced)) %>%
+  data.frame() %>%
+  transmute_all(.funs = funs(as.character(.))) %>%
+  as_tibble()
+
+memory <- list(experienced, constructed)
+rm(experienced, constructed)
 ```
 
 <!-- Style definitions -->
-<em>
 <style type="text/css">
 h1.title {
 
@@ -69,102 +76,513 @@ h4.date {
 
   text-align: center;
 }
-.table {
-
-    width: 40%;
-    margin-left:10%;
-}
-img {
-
-    margin-left:10%;
-}
-#outcomes img{
-
-  height: 150px;
-}
-
 </style>
-</em>
 
 <!-- Beginn body -->
 
 #  {.tabset .tabset-fade}
 
-## Questions
-
-### Strategies
-
-All strategies follow this general logic adapted from the historical windows in order to determine the next expected choice:  
-
-```{r results='asis', echo=FALSE}
-matrix(c("Frequency of option", "Ratio of option", "Predicted option for trial x+1", "Count(A)~x~ = k",
-"Ratio(A)~x~ = 1", "Option A", " ", "Ratio(A)~x~ = 0", "Option B", " ", "0 < Ratio(A)~x~ < 1", "Guess",
-"Count(A)~x~ > Count(B)~x~ AND Count(A)~x~ ≠ k", "Ratio(A)~x~ > Ratio(B)~x~", "Option A", " ",
-"Ratio(B)~x~ > Ratio(A)~x~", "Option B", " ", "Ratio(A)~x~ = Ratio(B)~x~", "Guess",
-"Count(B)~x~ = k", "Ratio(B)~x~ = 1", "Option B", " ", "Ratio(B)~x~ = 0", "Option A", " ",
-"0 < Ratio(B)~x~ < 1", "Guess", "Count(B)~x~ > Count(A)~x~ AND Count(B)~x~ ≠ k",
-"Ratio(A)~x~ > Ratio(B)~x~", "Option A", " ", "Ratio(B)~x~ > Ratio(A)~x~",
-"Option B", " ", "Ratio(A)~x~ = Ratio(B)~x~", "Guess", "Count(A)~x~ = Count(B)~x~",
-"Ratio(A)~x~ > Ratio(B)~x~", "Option A", " ", "Ratio(B)~x~ > Ratio(A)~x~",
-"Option B", " ", "Ratio(A)~x~ = Ratio(B)~x~", "Guess"), byrow = TRUE, ncol = 3) %>%
-  knitr::kable(caption = "Predicted choice for Window strategies on trial x+1 given outcomes in historical window k") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-**Note.** k = size of window, x = Trial number  
-Count()~x~ = Occurrences of chosen option within the window at trial x in window k  
-Ratio()~x~ = (Wins with chosen option) / (Occurances of this option) at trial x in window k  
-  
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-
-#### Windows
-
-*No questions* &#10004;  
-
-k = {1; 9}
-
-#### Recency Weighting
-
-*No questions* &#10004;  
-
-k = all previous trials  
-Ratio()<subx</sub> = (weight \* win in last trial + (1 - weight) \* all previous wins) / (Occurances of this option) at trial x in window k</p>
-
-#### Constructivist Coding
-
-For this strategy I not only calculate the expected outcome for the chosen option but also for the other option. Then both the experienced and the constructed feedback are used for the next expected (and the constructed) outcome.  
-
-**Which information, however, do we want to use for making decisions? Do we a) regard all previous experienced and constructed outcomes, b) use a auxiliary window strategy underneath thus only paying attention to the k previous trials, or c) do we use a weighting strategy underneath, paying attention to all previous trials but weighting the recent one?**
-
-The experienced outcome is determined (as seen in the table above) relatively by comparing the two ratios. For the constructed outcome I could either do a reversed relative comparison or try to come up with an absolute parameter.   E.g. I select option A, ratioA > ratioB, the expected choice would be A after which the outcome will be calculated.  For the constructed choice, I would either expect a loss with B because ratioB < ratioA and then (I believe) always expect losses with the not chosen option. Or I compare the ratio to a fixed parameter ratioB > .5 and base my decision on that comparison. This does not, however, work well yet because the weight would render .5 not a good parameter. The ratios are too strongly dependent on the weights, so perhaps weight * .5 could work as parameter.  
-
-### Guesses
-Different strategies (and varying parameters) lead to different amounts of guessing (cases in which we make no prediction). For example, a window of k = 1 (WSLS) and a recency weight of &beta; = 1 should lead to the exact same results. However, the formula leads to a lot of guesses because while only the most recent trial is considered any loss would lead to a ratio of 0:  
-Ratio() = (weight \* win in last trial + (1 - weight) \* all previous wins) / (Occurances of this option)  
-= (1 \* 0 + (1-1) \* x)  
-= 0  
-This in turn will lead to guessing.  
-
-**Do we try to reduce the number of guesses or how do we best account for them?** Currently, I am only counting them.  
-
-### Papers
-I remember you mentioning LeMens for the recency weighting strategy (at least that is the name I wrote down), but I cannot find any papers by him clearly adressing this strategy, nor do I find good papers when searching for recency weighting on its own. **Would you know any papers on recency weighting by any chance?**
-
-## Paper
+## Summary
 
 Journal: Memory & Cognition?  
-Narrative: Wir untersuchen Zyklizität, Leben ist häufig zyklisch, wurde bisher nicht untersucht sondern immer nur stationär oder mit Trends.  
-Für jetzt mit Simulationen rechnen, die nur 10,000 Runs haben. Erst für die Publikation mit 100,000 rechnen.  
-Strategien:  
-Windows - Kareev  
-Recency weighting - LeMens  
+Narrative: We investigate cyclicity, life is often cyclic, never before investigated only ever stationary or with trends.  
+Strategies:  
+Positivist - Juslin    
 Constructivist - Juslin  
-Was tun Menschen? Was sollten sie tun?  
-Immer das warum? Warum sind manche Strategien gut und andere schlecht?  
-Diskussion: Entweder Menschen sind relativ gut im Umgang mit Zyklizität oder unsere theoretische Toolbox an Strategien ist unvollständig.
+Both use windows as memory boundary - Kareev  
+What do people do? What should they be doing?  
+Always the why! Why are some strategies good, some poor?  
+Discussion: Either people are reasonably good with cyclicity or our theoretical toolbox of strategies is incomplete.
 
 <p>&nbsp;</p>
 <p>&nbsp;</p>
+
+Run everything as window strategies, either with or without constructed memory. Window sizes range from 1 to the max window size currently defined -> "growing windows". The max windows will range from 1 (WSLS) to all previous trials. However, to save time we will likely cut some corners, e.g. win_max = 1 - 14, 20, 40, ... all ("maximal window"). 
+
+
+## Examples
+
+Here are some small-scale examples of how the code works. The functional programming approach allows me to introduce a strategy, test it in isolation, and then use it both for simulating and for matching.  
+
+Here are some examples that match expectations to behavior. This is done by taking each trial and assessing the expected outcome. Afterwards, a simple match to the actually taken choice provides a matching index.  
+
+```{r Examples, results='asis', echo=FALSE}
+match_handler(memory, "positivist", 1) %>%
+  knitr::kable(caption = "Window, size 1") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+match_handler(memory, "positivist", 5) %>%
+  knitr::kable(caption = "Window, size 5") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+
+match_handler(memory, "constructivist", 1) %>%
+  knitr::kable(caption = "Constructivist, size 1") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+match_handler(memory, "constructivist", 5) %>%
+  knitr::kable(caption = "Constructivist, size 5") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+
+match_handler(memory, "omniscient", "neutral") %>%
+  knitr::kable(caption = "Omniscient, neutral") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+match_handler(memory, "omniscient", "neutral") %>%
+  knitr::kable(caption = "Omniscient, negative") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+
+match_handler(memory, "guessing") %>%
+  knitr::kable(caption = "Guessing") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+```{r Examples2, results='asis', echo=FALSE}
+matching_index <- vector(mode = "integer", length = 14)
+for (i in 1:14) {
+  matching_index[i] <- match_handler(memory, "positivist", i) %>%
+    matching(memory[[1]], .) %>%
+    mean
+}
+
+tibble(x = 1:14,
+       y = matching_index) %>%
+  ggplot(aes(x, y)) +
+  geom_point() +
+  scale_x_discrete(limits = 1:14) +
+  labs(x = "Window size",
+       y = "Mean guesses",
+       title = "Mean number of guesses for positivist strategy") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+Here are some examples that simulate a strategy. All guesses are resolved as a random selection of either choice. w/l stand for win or lose with the respectively chosen option.
+
+```{r Examples3, results='asis', echo=FALSE}
+sim_handler(strategy = "positivist",
+            environment = "neutral",
+            strat_var = 1,
+            size = c(7, 12)) %>%
+  knitr::kable(caption = "Positivist, neutral, window size 1") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+sim_handler(strategy = "constructivist",
+            environment = "neutral",
+            strat_var = 1,
+            size = c(7, 12)) %>%
+  knitr::kable(caption = "Constructivist, neutral, window size 1") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+sim_handler(strategy = "omniscient",
+            environment = "positive",
+            strat_var = 1,
+            size = c(7, 12)) %>%
+  knitr::kable(caption = "Omniscient, positive") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+Finally, it is worth keeping track of the number of guesses that each study requires. A variation of the simulation handler counts guesses, which we can then plot (jittered):
+
+```{r Examples4}
+## Number of guesses
+sequ <- seq(1, 9, 1)
+
+# Positivist
+df <- nr_guesses_per_strat("constructivist",
+                           seq = sequ,
+                           dims = c(100, 120))
+df %>%
+  ggplot(aes(x = sequence,
+             y = guess_no,
+             color = condition)) +
+  geom_jitter() +
+  scale_x_discrete(limits = sequ) +
+  labs(x = "Window size",
+     y = "Number of guesses",
+     title = "Window strategy") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+
+# Constructivist
+df <- nr_guesses_per_strat("constructivist")
+df %>%
+  ggplot(aes(x = sequence,
+             y = guess_no,
+             color = condition)) +
+  geom_jitter() +
+  scale_x_discrete(limits = sequ) +
+  labs(x = "Window size",
+     y = "Number of guesses",
+     title = "Constructivist strategy") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+## Code {.tabset .tabset-fade}
+
+### Handlers {.tabset .tabset-fade}
+The master script can call two main handlers depending on whether the goal is to simulate a strategy or to match to an existing behavior data set. The simulation handler has two versions, one that counts guesses and one that does not. Basically, without guesses is easier to program and always my intermediate step.  
+
+#### The simulation handler:
+
+This function runs the simulation and returns the expected choices
+```{r Simulation Handler, eval=FALSE}
+# Main handler of simulation runs
+sim_handler <- function(strategy, environment, strat_var = NA, size) {
+  # List to store expected choices
+  df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
+    as_tibble()
+  df_const <- df_sim
+  ml <- list(df_sim, df_const)
+  rm(df_sim, df_const)
+  # Determine outcome probabilities
+  if (environment == "positive") {
+    probabilities <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+  } else if (environment == "neutral") {
+    probabilities <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+  } else {
+    probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+  }
+  
+  # First round is always forced to guess
+  ml[[1]][,1] <- rep("Guess", nrow(ml[[1]])) %>%
+    guesses %>%
+    outcome(prob = probabilities[1,])
+
+  if (strategy == "positivist") {
+    # Windows
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice 
+      ml[[1]][, i + 1] <- strat_positivist(ml[[1]][, j:i]) %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    for (i in 1:ncol(ml[[1]])) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice
+      output <- strat_constr(cbind(ml[[1]][, j:i],
+                                   ml[[2]][, j:i]))
+      # Experienced
+      ml[[1]][, i + 1] <- output[, 1] %>%
+        unlist %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+      # Constructed
+      ml[[2]][, i + 1] <- output[, 2] %>%
+        unlist %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "omniscient") {
+    # Omniscient
+    # Determine best choice
+    if (strat_var == "positive") {
+      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+    } else if (strat_var == "neutral") {
+      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+    } else {
+      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+    }
+    best_choice %<>%
+      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "guessing") {
+    # Guessing
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else {
+    warning("Please specify a strategy to be used!")
+  }
+  
+  # Return
+  ml[[1]]
+}
+```
+
+#### The simulation handler with guesses:
+
+This function runs the simulation and returns the expected choices as well as the trials guessed. Returns a list.
+```{r Simulation Guess Handler, eval=FALSE}
+# Version two. Mainly identical but keeps tracks of number of guesses. Slightly less readable.
+sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
+  # List to store expected choices
+  df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
+    as_tibble()
+  no_of_guesses_constr <- no_of_guesses_exp <- df_const <- df_sim
+  ml <- list(df_sim, df_const, no_of_guesses_exp, no_of_guesses_constr)
+  rm(df_sim, df_const, no_of_guesses_exp, no_of_guesses_constr)
+  # Determine best choice
+  if (environment == "positive") {
+    probabilities <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+  } else if (environment == "neutral") {
+    probabilities <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+  } else {
+    probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+  }
+  
+  # First round is always forced to guess
+  ml[[1]][,1] <- rep("Guess", nrow(ml[[1]])) %>%
+    guesses %>%
+    outcome(prob = probabilities[1,])
+  
+  if (strategy == "positivist") {
+    # Windows
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice
+      output <- strat_positivist(ml[[1]][, j:i])
+      ml[[3]][which(output == "Guess"), i + 1] <- 1
+      output <- guesses(unlist(output))
+      ml[[1]][, i + 1] <- output %>%
+        unlist() %>%
+        guesses() %>%
+        outcome(., prob = probabilities[i,])
+    }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    for (i in 1:ncol(ml[[1]])) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice
+      output <- strat_constr(cbind(ml[[1]][, j:i],
+                                   ml[[2]][, j:i]))
+      # Add guesses to counter
+      ml[[3]][which(output[, 1] == "Guess"), i + 1] <- 1
+      ml[[4]][which(output[, 2] == "Guess"), i + 1] <- 1
+      # Resolve guesses
+      output[, 1] <- guesses(unlist(output[, 1]))
+      # Commented out as constructed expectations do not get their guesses resolved
+      # ml[[2]][, i + 1] <- guesses(unlist(ml[[2]][, i + 1]))
+      
+      # Update memory
+      ml[[1]][, i + 1] <- outcome(unlist(output[, 1]), prob = probabilities[i,])
+      ml[[2]][, i + 1] <- output[,2]
+    }
+  } else if (strategy == "omniscient") {
+    # Omniscient
+    # Determine best choice
+    if (strat_var == "positive") {
+      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+    } else if (strat_var == "neutral") {
+      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+    } else {
+      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+    }
+    best_choice %<>%
+      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else if (strategy == "guessing") {
+    # Guessing
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+        guesses %>%
+        outcome(prob = probabilities[i,])
+    }
+  } else {
+    warning("Please specify a strategy to be used!")
+  }
+  
+  ml
+}
+```
+
+#### The matching handler:
+
+This function determines expected choices based on given data.
+```{r Matching Handler, eval=FALSE}
+match_handler <- function(ml, strategy, strat_var = NA) {
+  dfexpectations <- matrix(nrow = nrow(ml[[1]]), ncol = ncol(ml[[1]])) %>%
+    as_tibble() # Tibble to store expected choices
+  if (strategy == "positivist") {
+    # Windows
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var
+      if (j < 1) {j <- 1}
+      # Determine expected choices 
+      dfexpectations[, i + 1] <- strat_positivist(ml[[1]][, j:i])
+    }
+  } else if (strategy == "constructivist") {
+    # Constructivist
+    df_constructed <- dfexpectations
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      # Define lower window boundary
+      j <- i - strat_var
+      if (j < 1) {j <- 1}
+      # Determine expected choices 
+      output <- strat_constr(cbind(ml[[1]][, j:i],
+                                   ml[[2]][, j:i]))
+      dfexpectations[, i + 1] <- output[,1]
+      df_constructed[, i + 1] <- output[,2]
+    }
+  } else if (strategy == "omniscient") {
+    # Omniscient
+    # Determine best choice
+    if (strat_var == "positive") {
+      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
+    } else if (strat_var == "neutral") {
+      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
+    } else {
+      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
+    }
+    best_choice %<>%
+      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      dfexpectations[, i + 1] <- strat_omni(dim(ml[[1]][1:i]), best_choice)
+    }
+  } else if (strategy == "guessing") {
+    # Guessing
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
+      dfexpectations[, i + 1] <- strat_guessing(nrow(ml[[1]]))
+    }
+  } else {
+    warning("Please specify a strategy to be used!")
+  }
+  
+  dfexpectations
+}
+```
+
+And then this function determines the matches
+```{r Matcher, eval=FALSE}
+matching <- function(experienced, expected) {
+  matches <- matrix(nrow = nrow(expected), ncol = ncol(expected)) %>%
+    as_tibble()
+  
+  
+  for (i in 2:ncol(expected)) {
+    matches[experienced[, i] %>%
+              unlist() %>%
+              substr(., 2, 2) == expected[, i], i] <- 1
+  }
+  
+  matches %>%
+    rowSums(na.rm = TRUE)
+}
+```
+
+### Strategies {.tabset .tabset-fade}
+
+We compare four strategies, two defined by Juslin and colleagues and two normative strategies. The strategies are:  
+ * A **Positivist** strategy: no constructed memory for the not-chosen option  
+ * A **Constructivist** strategy: as the name suggests, outcomes for the not-chosen option are constructed  
+ * **Guessing**: guess on every trial  
+ * An **Omniscient** strategy: knows the distribution of outcome probabilities and always chooses the one with higher outcome probability
+
+The positivist and constructivist strategies are both based on windows of varying size.
+
+#### Windows
+```{r Positivist, eval=FALSE}
+### Windows
+strat_positivist <- function(dfpositivist) {
+  # Determine expected next choice
+  expected <- apply(dfpositivist, 1, windowchoice)
+  
+  # return expectations
+  expected
+}
+```
+
+#### Constructivist Coding
+```{r Constructivist, eval=FALSE}
+### Constructivist
+strat_constr <- function(dfconstr) {
+  # Determine expected next choice
+  expected <- apply(dfconstr, 1, windowchoice, TRUE)
+  
+  # Tease apart
+  expected <- str_split_fixed(expected, "-", 2) %>%
+    as_tibble %>%
+    mutate(V2 = ifelse(V2 == "", "Guess", V2))
+  
+  # return expectations
+  expected
+}
+```
+
+#### Omniscient
+```{r Omniscient, eval=FALSE}
+strat_omni <- function(dfomni, best) {
+ rep(best[dfomni[2]], dfomni[1])
+}
+```
+
+#### Guessing
+```{r Guessing, eval=FALSE}
+### Guessing
+strat_guessing <- function(dfguess) {
+  # Fill with guesses and return
+  rep("Guess", dfguess)
+}
+```
+
+
+
+
+## Simulations {.tabset .tabset-fade}
+
+### Most successful strategy {.tabset .tabset-fade}
+
+```{r sim_load, include=FALSE}
+load(here("Output/sim_results.RData"))
+sim_length <- nrow(success_results)
+```
+
+First, which strategy is most successful? We ran `r sim_length` iterations of the simulation.
+
+```{r sim_descriptive, echo=FALSE}
+# Descriptive
+success_results %>%
+  group_by(strategy, environment) %>%
+  summarize(max = max(success),
+            avg = mean(success),
+            min = min(success)) %>%
+  knitr::kable(caption = "Descriptive statistics") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+#### Static
+```{r sim_graph_static, echo=FALSE}
+# Descriptive
+success_results %>%
+  ggplot(aes(x = window,
+             y = success,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+#### Dynamic
+```{r sim_graph_dynamic, echo=FALSE}
+# Descriptive
+p <- success_results %>%
+  ggplot(aes(x = window,
+             y = success,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+ggplotly(p)
+```
+
+## Paper
 
 ### Theory
 Much about our surrounding environment follows cyclic patterns. As the earth orbits the sun, day and night alternate while seasons come and go. These largescale patterns then dictate patterns in our lives: We tend to structure our awake time around day and night times and we tend to engage in different activities depending on the time of the year. For many, the seasons influence the available foods and for many workers (e.g. farmers) the seasons prescribe the type of work currently to be done. Cyclic patterns are everywhere in life.  
@@ -184,10 +602,6 @@ Three such families of strategies we will investigate closer.
 
 Kareev (1995, 1997) argues that small samples hava an advantage in detecting correlation due to the stronger skew of the covariation the smaller the sample is. This proposition was quickly picked up by others. For example, Hertwig and Todd (2005) and Kareev (2000) argue that cognitive limitations are, in fact, adaptive as they allow for quicker learning of contingencies. Furthermore, the cognitive limitations make it implausible that humans can always keep track of the full outcome history in order to determine the next choice. Instead, it is a reasonable assumption that only the last few trials, a recent historic window, are used to determine the next choice (Otto et al., 2011).  
 
-#### Recency Weighting
-
-LeMens
-
 #### Constructivist Coding
 
 Until now, all strategies assumed that the decision maker receives feedback on every trial and ignores non-feedback trials (such as the option not chosen). Costructivist Coding, however, proposes that in the absense of feedback, decision makers memorize the expected outcome. Future decisions will then be based not only on experienced outcomes but also on constructed outcomes where necessary (Elwin, Juslin, Olsson, & Enkvist, 2007; Ghaffarzadegan & Stewart, 2011; Henriksson, Elwin, & Juslin, 2010). In bandit tasks in which the decision maker only receives feedback for the chosen outcome, an outcome for the alternative option might be constructed for every single trial.  
@@ -205,701 +619,3 @@ Which strategies perform best and why, what do people seem to do.
 
 ### Discussion
 Match or discrepancy of simulation and experiment?
-
-## Examples
-Here are some examples that match expectations to behavior. This is done by taking each trial and assessing the expected outcome. Afterwards, a simple match to the actually taken choice provides a matching index.  
-
-The functional programming approach allows me to introduce a strategy, test it in isolation, and then use it both for simulating and for matching. I believe it may be one of the more error-proof approaches.  
-
-```{r Examples, results='asis'}
-match_handler(df, "window", 1) %>%
-  knitr::kable(caption = "Window, size 1") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-match_handler(df, "weighting", .1) %>%
-  knitr::kable(caption = "Weighting, weight .1") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-match_handler(df, "constructivist") %>%
-  knitr::kable(caption = "Constructivist") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-
-Here are some examples that simulate a strategy. All guesses are resolved as a random selection of either choice. w/l stand for win or lose with the respectively chosen option.
-
-```{r Examples2, results='asis'}
-sim_handler(strategy = "window",
-            environment = "neutral",
-            strat_var = 1,
-            size = c(7, 12)) %>%
-  knitr::kable(caption = "Neutral window size 1") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-sim_handler(strategy = "weighting",
-            environment = "neutral",
-            strat_var = .9,
-            size = c(7, 12)) %>%
-  knitr::kable(caption = "Neutral weighting weight .9") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-sim_handler(strategy = "constructivist",
-            environment = "neutral",
-            size = c(7, 12)) %>%
-  knitr::kable(caption = "Neutral constructivist") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-
-Finally, it is worth keeping track of the number of guesses that each study requires. A variation of the simulation handler counts guesses, which we can then plot (jittered):
-
-```{r Examples3}
-# Number of guesses
-# Weighting
-sequ <- seq(.1, 1, .05)
-guess_no_pos <- guess_no_neu <- guess_no_neg <- vector(mode = "numeric", length = length(sequ))
-for (i in sequ) {
-  # Positive
-  guess_no_pos[which(sequ == i)] <- sim_handler_guesses(strategy = "weighting",
-                                            environment = "positive",
-                                            strat_var = i,
-                                            size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-  # Neutral
-  guess_no_neu[which(sequ == i)] <- sim_handler_guesses(strategy = "weighting",
-                                                        environment = "neutral",
-                                                        strat_var = i,
-                                                        size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-  # Negative
-  guess_no_neg[which(sequ == i)] <- sim_handler_guesses(strategy = "weighting",
-                                                        environment = "negative",
-                                                        strat_var = i,
-                                                        size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-}
-p <- rbind(tibble(guess_no = guess_no_pos,
-             sequence = sequ,
-             condition = "positive"),
-      tibble(guess_no = guess_no_neu,
-             sequence = sequ,
-             condition = "neutral"),
-      tibble(guess_no = guess_no_pos,
-             sequence = sequ,
-             condition = "negative")) %>%
-  ggplot(aes(x = sequence,
-             y = guess_no,
-             color = condition)) +
-  geom_jitter() +
-  labs(x = "Weight",
-       y = "Number of guesses",
-       title = "Recency weight strategy") +
-  scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
-ggplotly(p)
-```
-
-```{r Examples4}
-# Windows
-sequ <- seq(1, 9, 1)
-guess_no_pos <- guess_no_neu <- guess_no_neg <- vector(mode = "numeric", length = length(sequ))
-for (i in sequ) {
-  # Positive
-  guess_no_pos[which(sequ == i)] <- sim_handler_guesses(strategy = "window",
-                                                        environment = "positive",
-                                                        strat_var = i,
-                                                        size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-  # Neutral
-  guess_no_neu[which(sequ == i)] <- sim_handler_guesses(strategy = "window",
-                                                    environment = "neutral",
-                                                    strat_var = i,
-                                                    size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-  # Negative
-  guess_no_neg[which(sequ == i)] <- sim_handler_guesses(strategy = "window",
-                                                        environment = "negative",
-                                                        strat_var = i,
-                                                        size = c(100, 120)) %>%
-    summarise(avg = mean(no_of_guesses)) %>%
-    unlist
-}
-
-
-p <- rbind(tibble(guess_no = guess_no_pos,
-       sequence = sequ,
-       condition = "positive"),
-      tibble(guess_no = guess_no_neu,
-             sequence = sequ,
-             condition = "neutral"),
-      tibble(guess_no = guess_no_pos,
-             sequence = sequ,
-             condition = "negative")) %>%
-  ggplot(aes(x = sequence,
-             y = guess_no,
-             color = condition)) +
-  geom_jitter() +
-  labs(x = "Window size",
-       y = "Number of guesses",
-       title = "Window strategy") +
-  scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
-ggplotly(p)
-```
-
-## Code {.tabset .tabset-fade}
-
-### Handlers
-The master script can call two main handlers depending on whether the goal is to simulate a strategy or to match to an existing behavior data set.  
-
-The simulation handler:
-
-```{r Simulation Handler, eval=FALSE}
-### Code snippet for resolving guesses
-guesses <- function(choice) {
-  # Resolve guesses
-  guesses <- vector(mode = "character", length = length(which(choice == "Guess")))
-  # Set up dice and avoid uncertainty with 0.5
-  dice <- runif((length(guesses)), 0, 1)
-  while (any(dice == 0.5)) {
-    dice[which(dice == 0.5)] <- runif((length(dice[which(dice == 0.5)])), 0, 1)
-  }
-  # Assign to option A or B
-  guesses[which(dice < 0.5)] <- "A"
-  guesses[which(dice > 0.5)] <- "B"
-  choice[which(choice == "Guess")] <- guesses
-  
-  return(choice)
-}
-
-# Function for determining outcomes
-outcome <- function(choices, prob) {
-  prob <- unlist(prob)
-  # Set up dice and avoid uncertainty with 0.5
-  dice <- runif((length(choices)), 0, 1)
-  while (any(dice == 0.5)) {
-    dice[which(dice == 0.5)] <- runif((length(dice[which(dice == 0.5)])), 0, 1)
-  }
-  tibble(choices, dice) %>%
-    transmute(outcome = ifelse(choices == "A" & dice <= prob[1], "wA",
-                            ifelse(choices == "A" & dice > prob[1], "lA",
-                                   ifelse(choices == "B" & dice <= prob[2], "wB", "lB")))) %>%
-    unlist %>%
-    return
-}
-
- # Main handler of simulation runs
-sim_handler <- function(strategy, environment, strat_var = NA, size) {
-  df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
-    as_tibble() # Tibble to store expected choices
-  # Determine best choice
-  if (environment == "positive") {
-    probabilities <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
-  } else if (environment == "neutral") {
-    probabilities <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
-  } else {
-    probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
-  }
-  
-  # First round is always forced to guess
-  df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
-    guesses %>%
-    outcome(prob = probabilities[1,])
-
-  if (strategy == "window") {
-    # Windows
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_window(df_sim[, 1:i], winsize = strat_var) %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "weighting") {
-    # Weighting
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var) %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "constructivist") {
-    # Constructivist
-    for (i in 1:ncol(df_sim)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i]) %>%
-        select(V1) %>%
-        unlist %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "omniscient") {
-    # Omniscient
-    # Determine best choice
-    if (strat_var == "positive") {
-      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
-    } else if (strat_var == "neutral") {
-      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
-    } else {
-      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
-    }
-    best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_omni(dim(df_sim), best_choice) %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "guessing") {
-    # Guessing
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_guessing(nrow(df_sim)) %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else {
-    warning("Please specify a strategy to be used!")
-  }
-  
-  return(df_sim)
-}
-
-# Version two. Mainly identical but keeps tracks of number of guesses. Slightly less readable.
-sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
-  df_sim <- matrix(nrow = size[1], ncol = size[2]) %>%
-    as_tibble() # Tibble to store expected choices
-  no_of_guesses <- vector(mode = "integer", length = nrow(df_sim))
-  # Determine best choice
-  if (environment == "positive") {
-    probabilities <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
-  } else if (environment == "neutral") {
-    probabilities <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
-  } else {
-    probabilities <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
-  }
-  
-  # First round is always forced to guess
-  df_sim[,1] <- rep("Guess", nrow(df_sim)) %>%
-    guesses %>%
-    outcome(prob = probabilities[1,])
-  
-  if (strategy == "window") {
-    # Windows
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_window(df_sim[, 1:i], winsize = strat_var)
-      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
-      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
-      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
-    }
-  } else if (strategy == "weighting") {
-    # Weighting
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_weight(df_sim[, 1:i], weight = strat_var)
-      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
-      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
-      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
-    }
-  } else if (strategy == "constructivist") {
-    # Constructivist
-    for (i in 1:ncol(df_sim)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_constr(df_sim[, 1:i])
-      no_of_guesses[which(df_sim[, i + 1] == "Guess")] <- no_of_guesses[which(df_sim[, i + 1] == "Guess")] + 1
-      df_sim[, i + 1] <- guesses(unlist(df_sim[, i + 1]))
-      df_sim[, i + 1] <- outcome(unlist(df_sim[, i + 1]), prob = probabilities[i,])
-    }
-  } else if (strategy == "omniscient") {
-    # Omniscient
-    # Determine best choice
-    if (strat_var == "positive") {
-      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
-    } else if (strat_var == "neutral") {
-      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
-    } else {
-      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
-    }
-    best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_omni(dim(df_sim), best_choice) %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else if (strategy == "guessing") {
-    # Guessing
-    for (i in 1:(ncol(df_sim) - 1)) { # Iterate over strategy
-      df_sim[, i + 1] <- strat_guessing(nrow(df_sim)) %>%
-        guesses %>%
-        outcome(prob = probabilities[i,])
-    }
-  } else {
-    warning("Please specify a strategy to be used!")
-  }
-  
-  cbind(df_sim, no_of_guesses) %>%
-    return
-}
-```
-
-The matching handler:
-
-```{r Matching Handler, eval=FALSE}
-match_handler <- function(df, strategy, strat_var = NA) {
-  dfexpectations <- matrix(nrow = nrow(df), ncol = ncol(df)) %>%
-    as_tibble() # Tibble to store expected choices
-  if (strategy == "window") {
-    # Windows
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_window(df[, 1:i], winsize = strat_var)
-    }
-  } else if (strategy == "weighting") {
-    # Weighting
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_weight(df[, 1:i], weight = strat_var)
-    }
-  } else if (strategy == "constructivist") {
-    # Constructivist
-    df_constructed <- dfexpectations
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      output <- strat_constr(df[, 1:i])
-      dfexpectations[, i + 1] <- output[,1]
-      df_constructed[, i + 1] <- output[,2]
-    }
-  } else if (strategy == "omniscient") {
-    # Omniscient
-    # Determine best choice
-    if (strat_var == "positive") {
-      best_choice <- tibble(acurve = CURVE_A_pos, bcurve = CURVE_B_pos)
-    } else if (strat_var == "neutral") {
-      best_choice <- tibble(acurve = CURVE_A_neu, bcurve = CURVE_B_neu)
-    } else {
-      best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
-    }
-    best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_omni(dim(df), best_choice)
-    }
-  } else if (strategy == "guessing") {
-    # Guessing
-    for (i in 1:(ncol(df) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_guessing(nrow(df))
-    }
-  } else {
-    warning("Please specify a strategy to be used!")
-  }
-  
-  return(dfexpectations)
-}
-```
-
-### Strategies {.tabset .tabset-fade}
-
-#### Windows
-```{r Windows, eval=FALSE}
-### Windows
-strat_window <- function(dfwindow, winsize) {
-  i <- ncol(dfwindow)
-  if (winsize > i) {winsize <- i}
-  # Experienced window
-  experienced_window <- dfwindow[, (i - winsize + 1) : i]
-  
-  # Determine expected next choice
-  expected <- apply(experienced_window, 1, function(x) {
-    # Previous outcomes within window
-    losses_A <- length(which(x == "lA"))
-    wins_A <- length(which(x == "wA"))
-    losses_B <- length(which(x == "lB"))
-    wins_B <- length(which(x == "wB"))
-    
-    # Ratio of wins with option A
-    if (wins_A + losses_A == 0) {
-      ratio_A <- 0
-    } else {
-      ratio_A <- wins_A / (wins_A + losses_A)
-    }
-    
-    # Ratio of wins with option B
-    if (wins_B + losses_B == 0) {
-      ratio_B <- 0
-    } else {
-      ratio_B <- wins_B / (wins_B + losses_B)
-    }
-    # Determine next choice by comparing ratios
-    if ((wins_A + losses_A) > (wins_B + losses_B)) { # A was chosen more frequently, everything from A's perspective
-      if (wins_A + losses_A == winsize) { # A was chosen every single time
-        if (ratio_A == 1) {
-          next_choice <- "A" # Always won. Choose A
-        } else if (ratio_A == 0) {
-          next_choice <- "B" # Always lost. Choose B
-        } else {
-          next_choice <- "Guess" # Mixed results with A only. No prediction
-        }
-      } else { # A was chosen more often but not always
-        if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else if ((wins_A + losses_A) < (wins_B + losses_B)) { # Reversal: everything from B's perspective
-      if (wins_B + losses_B == winsize) { # B was chosen every single time
-        if (ratio_B == 1) {
-          next_choice <- "B" # Always won. Choose B
-        } else if (ratio_B == 0) {
-          next_choice <- "A" # Always lost. Choose A
-        } else {
-          next_choice <- "Guess" # Mixed results with B only. No prediction
-        }
-      } else { # B was chosen more often but not always
-        if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else { # If both were chosen equally often
-      if (ratio_A > ratio_B) {
-        next_choice <- "A" # Choose A
-      }
-      if (ratio_B > ratio_A) {
-        next_choice <- "B" # Choose B
-      }
-      if (ratio_A == ratio_B) {
-        next_choice <- "Guess" # No prediction
-      }
-    }
-    
-    # Return expected choice
-    return(next_choice)
-  })
-  
-  # return expectations
-  return(expected)
-}
-```
-
-#### Recency Weighting
-```{r Weighting, eval=FALSE}
-# Weighting
-strat_weight <- function(dfweight, weight) {
-  i <- ncol(dfweight)
-  # Experienced window
-  experienced_window <- dfweight[, 1 : i]
-  
-  # Determine expected next choice
-  expected <- apply(experienced_window, 1, function(x) {
-    # Previous outcomes within window
-    if (length(x) > 1) {
-      losses_A <- length(which(x[1 : (length(x) - 1)] == "lA"))
-      wins_A <- length(which(x[1 : (length(x) - 1)] == "wA"))
-      losses_B <- length(which(x[1 : (length(x) - 1)] == "lB"))
-      wins_B <- length(which(x[1 : (length(x) - 1)] == "wB"))
-    } else {
-      losses_A <- wins_A <- losses_B <- wins_B <- 0
-    }
-    # Most recent outcome
-    recent_losses_A <- length(which(x[length(x)] == "lA"))
-    recent_wins_A <- length(which(x[length(x)] == "wA"))
-    recent_losses_B <- length(which(x[length(x)] == "lB"))
-    recent_wins_B <- length(which(x[length(x)] == "wB"))
-    # Totals
-    all_A <- wins_A + losses_A + recent_wins_A + recent_losses_A
-    all_B <- wins_B + losses_B + recent_wins_B + recent_losses_B
-    
-    # Ratio of wins with option A
-    if (all_A == 0) {
-      ratio_A <- 0
-    } else {
-      ratio_A <- (weight * recent_wins_A + (1 - weight) * wins_A) / all_A
-    }
-    # Ratio of wins with option B
-    if (all_B == 0) {
-      ratio_B <- 0
-    } else {
-      ratio_B <- (weight * recent_wins_B + (1 - weight) * wins_B) / all_B
-    }
-    
-    # Determine next choice by comparing ratios
-    if (all_A > all_B) { # A was chosen more frequently, everything from A's perspective
-      if (all_A == i) { # A was chosen every single time
-        if ((wins_A + recent_wins_A) == all_A) { # Ratio needn't equal 1. But with all wins we choose this option
-          next_choice <- "A" # Always won. Choose A
-        } else if (ratio_A == 0) {
-          next_choice <- "B" # Always lost. Choose B
-        } else {
-          next_choice <- "Guess" # Mixed results with A only. No prediction
-        }
-      } else { # A was chosen more often but not always
-        if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else if (all_B < all_A) { # Reversal: everything from B's perspective
-      if (all_B == i) { # B was chosen every single time
-        if ((wins_B + recent_wins_B) == all_B) { # Ratio needn't equal 1. But with all wins we choose this option
-          next_choice <- "B" # Always won. Choose B
-        } else if (ratio_B == 0) {
-          next_choice <- "A" # Always lost. Choose A
-        } else {
-          next_choice <- "Guess" # Mixed results with B only. No prediction
-        }
-      } else { # B was chosen more often but not always
-        if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else { # If both were chosen equally often
-      if (ratio_A > ratio_B) {
-        next_choice <- "A" # Choose A
-      }
-      if (ratio_B > ratio_A) {
-        next_choice <- "B" # Choose B
-      }
-      if (ratio_A == ratio_B) {
-        next_choice <- "Guess" # No prediction
-      }
-    }
-    
-    # Return expected choice
-    return(next_choice)
-  })
-  
-  # return expectations
-  return(expected)
-}
-```
-
-#### Constructivist Coding
-```{r Constructivist, eval=FALSE}
-### Constructivist
-strat_constr <- function(dfconstr) {
-  i <- ncol(dfconstr)
-  # Experienced window
-  experienced_window <- dfconstr[, 1 : i]
-  
-  # Determine expected next choice
-  expected <- apply(experienced_window, 1, function(x) {
-    # Previous outcomes within window
-    losses_A <- length(which(x[1 : length(x)] == "lA"))
-    wins_A <- length(which(x[1 : length(x)] == "wA"))
-    losses_B <- length(which(x[1 : length(x)] == "lB"))
-    wins_B <- length(which(x[1 : length(x)] == "wB"))
-    # Totals
-    all_A <- wins_A + losses_A
-    all_B <- wins_B + losses_B
-    
-    # Ratio of wins with option A
-    if (all_A == 0) {
-      ratio_A <- 0
-    } else {
-      ratio_A <- wins_A / all_A
-    }
-    # Ratio of wins with option B
-    if (all_B == 0) {
-      ratio_B <- 0
-    } else {
-      ratio_B <- wins_B / all_B
-    }
-    
-    # Determine next choice by comparing ratios
-    if (all_A > all_B) { # A was chosen more frequently, everything from A's perspective
-      if (all_A == i) { # A was chosen every single time
-        if (wins_A == all_A) { # Ratio needn't equal 1. But with all wins we choose this option
-          next_choice <- "A" # Always won. Choose A
-        } else if (ratio_A == 0) {
-          next_choice <- "B" # Always lost. Choose B
-        } else {
-          next_choice <- "Guess" # Mixed results with A only. No prediction
-        }
-      } else { # A was chosen more often but not always
-        if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else if (all_B < all_A) { # Reversal: everything from B's perspective
-      if (all_B == i) { # B was chosen every single time
-        if (wins_B == all_B) { # Ratio needn't equal 1. But with all wins we choose this option
-          next_choice <- "B" # Always won. Choose B
-        } else if (ratio_B == 0) {
-          next_choice <- "A" # Always lost. Choose A
-        } else {
-          next_choice <- "Guess" # Mixed results with B only. No prediction
-        }
-      } else { # B was chosen more often but not always
-        if (ratio_B > ratio_A) {
-          next_choice <- "B" # Won more often with B. Choose B
-        } else if (ratio_A > ratio_B) {
-          next_choice <- "A" # Won more often with A. Choose A
-        } else {
-          next_choice <- "Guess" # Same results. No prediction
-        }
-      }
-    } else { # If both were chosen equally often
-      if (ratio_A > ratio_B) {
-        next_choice <- "A" # Choose A
-      }
-      if (ratio_B > ratio_A) {
-        next_choice <- "B" # Choose B
-      }
-      if (ratio_A == ratio_B) {
-        next_choice <- "Guess" # No prediction
-      }
-    }
-    
-    # Constructivist addition
-    if (next_choice == "A") {
-      if (ratio_B >= 0.5) { # THIS SHOULD PROBABLY NOT BE .5!!!!!
-        next_choice <- "A-wB"
-      } else {
-        next_choice <- "A-lB"
-      }
-    } else if (next_choice == "B") {
-      if (ratio_A >= 0.5) {
-        next_choice <- "B-wA"
-      } else {
-        next_choice <- "B-lA"
-      }
-    }
-    
-    # Return expected choice
-    return(next_choice)
-  })
-  
-  # Tease apart
-  expected <- str_split_fixed(expected, "-", 2) %>%
-    as_tibble %>%
-    mutate(V2 = ifelse(V2 == "", "Guess", V2))
-  
-  # return expectations
-  return(expected)
-}
-```
-
-#### Omniscient
-```{r Omniscient, eval=FALSE}
-strat_omni <- function(dfomni, best) {
- rep(best[dfomni[2]], dfomni[1])
-}
-```
-
-#### Guessing
-```{r Guessing, eval=FALSE}
-### Guessing
-strat_guessing <- function(dfguess) {
-  # Fill with guesses and return
-  rep("Guess", dfguess) %>%
-    return
-}
-```
-
-
-
