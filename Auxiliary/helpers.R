@@ -31,28 +31,28 @@ outcome <- function(choices, prob) {
 }
 
 # Summarize number of guesses for a strategy per condition
-nr_guesses_per_strat <- function(strategy, sequ = sequ) {
-  guess_no_pos <- guess_no_neu <- guess_no_neg <- vector(mode = "numeric", length = length(sequ))
-  for (i in sequ) {
+nr_guesses_per_strat <- function(strategy, seq = sequ, dims = c(100, 120)) {
+  guess_no_pos <- guess_no_neu <- guess_no_neg <- vector(mode = "numeric", length = length(seq))
+  for (i in seq) {
     # Positive
-    guess_no_pos[which(sequ == i)] <- sim_handler_guesses(strategy = "positivist",
+    guess_no_pos[which(seq == i)] <- sim_handler_guesses(strategy = "positivist",
                                                           environment = "positive",
                                                           strat_var = i,
-                                                          size = c(100, 120))[[3]] %>%
+                                                          size = dims)[[3]] %>%
       rowSums(na.rm = TRUE) %>%
       mean()
     # Neutral
-    guess_no_neu[which(sequ == i)] <- sim_handler_guesses(strategy = "positivist",
+    guess_no_neu[which(seq == i)] <- sim_handler_guesses(strategy = "positivist",
                                                           environment = "neutral",
                                                           strat_var = i,
-                                                          size = c(100, 120))[[3]] %>%
+                                                          size = dims)[[3]] %>%
       rowSums(na.rm = TRUE) %>%
       mean()
     # Negative
-    guess_no_neg[which(sequ == i)] <- sim_handler_guesses(strategy = "positivist",
+    guess_no_neg[which(seq == i)] <- sim_handler_guesses(strategy = "positivist",
                                                           environment = "negative",
                                                           strat_var = i,
-                                                          size = c(100, 120))[[3]] %>%
+                                                          size = dims)[[3]] %>%
       rowSums(na.rm = TRUE) %>%
       mean()
   }
