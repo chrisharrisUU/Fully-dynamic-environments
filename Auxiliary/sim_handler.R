@@ -62,15 +62,18 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
       best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
     }
     best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+      transmute(best = ifelse(acurve == bcurve, "Guess", ifelse(acurve > bcurve, "A", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+      # Determine next choice
+      ml[[1]][, i + 1] <- strat_omni(best_choice[i], nrow_of_df) %>%
         outcome(prob = probabilities[i,])
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+      ml[[1]][, i + 1] <- strat_guessing(nrow_of_df) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
     }
@@ -151,15 +154,21 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
       best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
     }
     best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+      transmute(best = ifelse(acurve == bcurve, "Guess", ifelse(acurve > bcurve, "A", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice
+      ml[[1]][, i + 1] <- strat_omni(best_choice[i], nrow_of_df) %>%
         outcome(prob = probabilities[i,])
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+      ml[[1]][, i + 1] <- strat_guessing(nrow_of_df) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
     }

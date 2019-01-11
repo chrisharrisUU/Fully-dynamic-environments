@@ -35,13 +35,15 @@ match_handler <- function(ml, strategy, strat_var = NA) {
     }
     best_choice %<>%
       transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_omni(dim(ml[[1]][1:i]), best_choice)
+      dfexpectations[, i + 1] <- strat_omni(best_choice[i], nrow_of_df)
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_guessing(nrow(ml[[1]]))
+      dfexpectations[, i + 1] <- strat_guessing(nrow_of_df)
     }
   } else {
     warning("Please specify a strategy to be used!")
