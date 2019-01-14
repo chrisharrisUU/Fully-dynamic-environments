@@ -84,3 +84,14 @@ matching <- function(experienced, expected) {
   matches %>%
     rowSums(na.rm = TRUE)
 }
+
+# Assigns choice its respective outcome probability
+enumerate <- function(run) {
+  tibble(a = CURVE_A_neu,
+         b = CURVE_B_neu,
+         person = unlist(run)) %>%
+    mutate(pers = substr(person, 2, 2)) %>%
+    transmute(strategy = s,
+              choice = ifelse(pers == "A", a, b),
+              trial = 1:n())
+}
