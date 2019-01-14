@@ -2,7 +2,7 @@
 
 # Load dependencies
 if (!require(needs)) {install.packages("needs"); library(needs)}
-needs(dplyr, magrittr, stringr, here, ggplot2)
+needs(dplyr, magrittr, purrr, stringr, here, ggplot2)
 
 ### Functions----
 source("Auxiliary/match_handler.R")
@@ -148,28 +148,26 @@ tibble(x = 1:14,
 
 
 ### Simulation----
-# Most successful strategy
-
-n <- 100 # number of "participants"
+n <- 1000 # number of "participants"
 c <- 1 # counter
 strats <- c("positivist", "constructivist", "guessing", "omniscient") # strategies
 envs <- c("positive", "neutral", "negative") # environments
-winds <- c(1:14, 20, 40, 60, 80, 100) # Window sizes
+winds <- c(1:14, seq(15, 315, by = 15)) # Window sizes
 success_results <- tibble(strategy = "test",
                           environment = "neutral",
                           window = 0,
                           guesses = 0,
                           success = 0) # Tibble for outcomes
 # Set up progress bar
-progress <- txtProgressBar(1, length(strats) * length(envs) * length(winds), style = 3)
+progress <- txtProgressBar(1, (length(strats) - 2) * length(envs) * length(winds) + 2, style = 3)
 
 for (s in strats) {
   for (env in envs) {
-    for (w in winds) {
+    if (s %in% c("omniscient", "guessing")) {
       # Run simulation
       result <- sim_handler_guesses(strategy = s,
                                     environment = env,
-                                    strat_var = w,
+                                    strat_var = 1,
                                     size = c(n, length(x)))
       # Average number of guesses
       nr_guesses <- result[[3]] %>%
@@ -182,12 +180,37 @@ for (s in strats) {
         rowSums() %>%
         mean
       # Save in tibble
-      success_results[c,] <- c(s, env, w, nr_guesses, nr_success)
+      success_results[c,] <- c(s, env, 1, nr_guesses, nr_success)
       
       # Show progress bar
       setTxtProgressBar(progress, c)
       # Update counter
       c <- c + 1
+    } else {
+      for (w in winds) {
+        # Run simulation
+        result <- sim_handler_guesses(strategy = s,
+                                      environment = env,
+                                      strat_var = w,
+                                      size = c(n, length(x)))
+        # Average number of guesses
+        nr_guesses <- result[[3]] %>%
+          rowSums(na.rm = TRUE) %>%
+          mean
+        # Average number of successful outcomes
+        nr_success <- result[[1]] %>%
+          transmute_all(.funs = funs(grepl("w", .))) %>%
+          transmute_all(.funs = funs(ifelse(., 1, 0))) %>%
+          rowSums() %>%
+          mean
+        # Save in tibble
+        success_results[c,] <- c(s, env, w, nr_guesses, nr_success)
+        
+        # Show progress bar
+        setTxtProgressBar(progress, c)
+        # Update counter
+        c <- c + 1
+      }
     }
   }
 }
@@ -198,10 +221,12 @@ success_results %<>%
          environment = factor(environment, levels = envs),
          window = factor(window, levels = winds),
          guesses = as.numeric(guesses),
-         success = as.numeric(success))
+         success = as.numeric(success),
+         runs = n)
 
 save(success_results, file = "Output/sim_results.RData")
 
+## Most successful strategy
 # Descriptive
 success_results %>%
   group_by(strategy, environment) %>%
@@ -213,6 +238,41 @@ success_results %>%
 success_results %>%
   ggplot(aes(x = window,
              y = success,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+
+# Most successful window sizes
+success_results %>%
+  filter(strategy %in% c("positivist", "constructivist")) %>%
+  group_by(strategy) %>%
+  top_n(3, success)
+
+# Most successful strategies
+success_results %>%
+  filter(strategy != "omniscient") %>%
+  top_n(3, success) %>%
+  arrange(desc(success))
+
+# Most successful strategies compared to normative omniscient strategy
+success_results %>%
+  top_n(3, success) %>%
+  arrange(desc(success))
+
+## Number of guesses per strategy
+# Descriptive
+success_results %>%
+  group_by(strategy, environment) %>%
+  summarize(max = max(guesses),
+            min = min(guesses),
+            avg = mean(guesses))
+
+# Graph
+success_results %>%
+  ggplot(aes(x = window,
+             y = guesses,
              shape = environment,
              color = strategy)) +
   geom_point() +
