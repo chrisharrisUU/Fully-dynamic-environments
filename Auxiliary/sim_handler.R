@@ -33,7 +33,7 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
     }
   } else if (strategy == "constructivist") {
     # Constructivist
-    for (i in 1:ncol(ml[[1]])) { # Iterate over strategy
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
       # Define lower window boundary
       j <- i - strat_var + 1
       if (j < 1) {j <- 1}
@@ -124,7 +124,7 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
     }
   } else if (strategy == "constructivist") {
     # Constructivist
-    for (i in 1:ncol(ml[[1]])) { # Iterate over strategy
+    for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
       # Define lower window boundary
       j <- i - strat_var + 1
       if (j < 1) {j <- 1}
@@ -171,6 +171,8 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
       ml[[1]][, i + 1] <- strat_guessing(nrow_of_df) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
+      # Add guesses to counter
+      ml[[3]][, i + 1] <- 1
     }
   } else {
     warning("Please specify a strategy to be used!")

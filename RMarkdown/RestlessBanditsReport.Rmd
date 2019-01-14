@@ -100,7 +100,165 @@ Discussion: Either people are reasonably good with cyclicity or our theoretical 
 Run everything as window strategies, either with or without constructed memory. Window sizes range from 1 to the max window size currently defined -> "growing windows". The max windows will range from 1 (WSLS) to all previous trials. However, to save time we will likely cut some corners, e.g. win_max = 1 - 14, 20, 40, ... all ("maximal window"). 
 
 
-## Examples
+## Simulations {.tabset .tabset-fade}
+
+### Most successful strategy {.tabset .tabset-fade}
+
+```{r sim_load, include=FALSE}
+load(here("Output/sim_results.RData"))
+```
+
+First, which strategy is most successful? We ran `r success_results$runs[1]` iterations of the simulation.
+
+#### Overview
+```{r sim_descriptive, echo=FALSE}
+# Descriptive
+success_results %>%
+  group_by(strategy, environment) %>%
+  summarize(max = round(max(success), 2),
+            avg = round(mean(success), 2),
+            min = round(min(success), 2)) %>%
+  knitr::kable(caption = "Descriptive statistics") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+#### Static
+```{r sim_graph_static, echo=FALSE}
+# Descriptive
+success_results %>%
+  ggplot(aes(x = window,
+             y = success,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+#### Dynamic
+```{r sim_graph_dynamic, echo=FALSE}
+# Descriptive
+p <- success_results %>%
+  ggplot(aes(x = window,
+             y = success,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+ggplotly(p)
+```
+
+#### Top strategies
+```{r}
+# Most successful window sizes
+success_results %>%
+  filter(strategy %in% c("positivist", "constructivist")) %>%
+  group_by(strategy) %>%
+  top_n(3, success) %>%
+  knitr::kable(caption = "Most successful window sizes") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+```{r}
+# Most successful strategies
+success_results %>%
+  filter(strategy != "omniscient") %>%
+  top_n(3, success) %>%
+  arrange(desc(success)) %>%
+  knitr::kable(caption = "Most successful strategy") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+```{r}
+# Most successful strategies compared to normative omniscient strategy
+success_results %>%
+  top_n(3, success) %>%
+  arrange(desc(success)) %>%
+  knitr::kable(caption = "Most successful strategies compared to normative omniscient strategy") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+### Number of guesses per strategy {.tabset .tabset-fade}
+
+```{r sim_guess_descriptive, echo=FALSE}
+# Descriptive
+success_results %>%
+  group_by(strategy, environment) %>%
+  summarize(max = round(max(guesses), 2),
+            avg = round(mean(guesses), 2),
+            min = round(min(guesses), 2)) %>%
+  knitr::kable(caption = "Descriptive statistics") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+#### Static
+```{r sim_guess_graph_static, echo=FALSE}
+# Descriptive
+success_results %>%
+  ggplot(aes(x = window,
+             y = guesses,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+#### Dynamic
+```{r sim_guess_graph_dynamic, echo=FALSE}
+# Descriptive
+p <- success_results %>%
+  ggplot(aes(x = window,
+             y = guesses,
+             shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+ggplotly(p)
+```
+
+## Paper
+
+### Theory
+Much about our surrounding environment follows cyclic patterns. As the earth orbits the sun, day and night alternate while seasons come and go. These largescale patterns then dictate patterns in our lives: We tend to structure our awake time around day and night times and we tend to engage in different activities depending on the time of the year. For many, the seasons influence the available foods and for many workers (e.g. farmers) the seasons prescribe the type of work currently to be done. Cyclic patterns are everywhere in life.  
+
+However, the current decision making literature does not seem to represent this supposition adequately. Most paradigms that involve decisions between two or more options have either static outcome probabilities or include but a single change (gradual or abrupt) <citations>. Only few studies include cyclic variations in the outcome probabilities (e.g. Bott & Heit, 2004). This not only limits the external validity of studies but, far more fundamentally, affects the decision strategies to be invested. For example, probability matching becomes a powerful, adaptive strategy once there are patterns to be detected (Gaissmeier, xxx) while at the same time its precise definition in a cyclic environment becomes unclear. And foraging theories need to account for continuous exploration, or at the least flexibility during exploitation phases as maximizing alone will not be an adaptive behavior.  
+
+Here, we create a two-armed bandit task with continuously, sinusoidally interweaving outcome probabilities and simulate three decision making strategies (decision windows, recency weighting, and constructivist coding) as well as two normative strategies (guessing and omniscient). We then have participants complete the bandit task and match these strategies to their behavior. The two normativce strategies serve as benchmarks for behavior.
+
+### Strategies 
+Two- or multi-armed bandit tasks have become somewhat of a gold standard in the decision making literature. They allow for a controlled environment in which to analyse participants' behavior and then match their behavior to predictions made by decision strategies.  
+
+(...)  
+
+Three such families of strategies we will investigate closer.
+
+#### Windows
+
+Kareev (1995, 1997) argues that small samples hava an advantage in detecting correlation due to the stronger skew of the covariation the smaller the sample is. This proposition was quickly picked up by others. For example, Hertwig and Todd (2005) and Kareev (2000) argue that cognitive limitations are, in fact, adaptive as they allow for quicker learning of contingencies. Furthermore, the cognitive limitations make it implausible that humans can always keep track of the full outcome history in order to determine the next choice. Instead, it is a reasonable assumption that only the last few trials, a recent historic window, are used to determine the next choice (Otto et al., 2011).  
+
+#### Constructivist Coding
+
+Until now, all strategies assumed that the decision maker receives feedback on every trial and ignores non-feedback trials (such as the option not chosen). Costructivist Coding, however, proposes that in the absense of feedback, decision makers memorize the expected outcome. Future decisions will then be based not only on experienced outcomes but also on constructed outcomes where necessary (Elwin, Juslin, Olsson, & Enkvist, 2007; Ghaffarzadegan & Stewart, 2011; Henriksson, Elwin, & Juslin, 2010). In bandit tasks in which the decision maker only receives feedback for the chosen outcome, an outcome for the alternative option might be constructed for every single trial.  
+
+### Methods 
+
+#### Simulations
+Part I: Simulation of strategies. Performance. Which strategies perform best. Why?  
+
+#### Experiment
+Part II: Matching to participant data. What do participants seem to do?
+
+### Results
+Which strategies perform best and why, what do people seem to do.
+
+### Discussion
+Match or discrepancy of simulation and experiment?
+
+## Other {.tabset .tabset-fade}
+### Examples
 
 Here are some small-scale examples of how the code works. The functional programming approach allows me to introduce a strategy, test it in isolation, and then use it both for simulating and for matching.  
 
@@ -213,12 +371,12 @@ df %>%
   theme_minimal()
 ```
 
-## Code {.tabset .tabset-fade}
+### Code {.tabset .tabset-fade}
 
-### Handlers {.tabset .tabset-fade}
+#### Handlers {.tabset .tabset-fade}
 The master script can call two main handlers depending on whether the goal is to simulate a strategy or to match to an existing behavior data set. The simulation handler has two versions, one that counts guesses and one that does not. Basically, without guesses is easier to program and always my intermediate step.  
 
-#### The simulation handler:
+##### The simulation handler
 
 This function runs the simulation and returns the expected choices
 ```{r Simulation Handler, eval=FALSE}
@@ -286,15 +444,18 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
       best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
     }
     best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+      transmute(best = ifelse(acurve == bcurve, "Guess", ifelse(acurve > bcurve, "A", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+      # Determine next choice
+      ml[[1]][, i + 1] <- strat_omni(best_choice[i], nrow_of_df) %>%
         outcome(prob = probabilities[i,])
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+      ml[[1]][, i + 1] <- strat_guessing(nrow_of_df) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
     }
@@ -307,7 +468,7 @@ sim_handler <- function(strategy, environment, strat_var = NA, size) {
 }
 ```
 
-#### The simulation handler with guesses:
+##### The simulation handler with guesses
 
 This function runs the simulation and returns the expected choices as well as the trials guessed. Returns a list.
 ```{r Simulation Guess Handler, eval=FALSE}
@@ -380,17 +541,25 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
       best_choice <- tibble(acurve = CURVE_A_neg, bcurve = CURVE_B_neg)
     }
     best_choice %<>%
-      transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+      transmute(best = ifelse(acurve == bcurve, "Guess", ifelse(acurve > bcurve, "A", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_omni(dim(ml[[1]]), best_choice) %>%
+      # Define lower window boundary
+      j <- i - strat_var + 1
+      if (j < 1) {j <- 1}
+      # Determine next choice
+      ml[[1]][, i + 1] <- strat_omni(best_choice[i], nrow_of_df) %>%
         outcome(prob = probabilities[i,])
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      ml[[1]][, i + 1] <- strat_guessing(nrow(ml[[1]])) %>%
+      ml[[1]][, i + 1] <- strat_guessing(nrow_of_df) %>%
         guesses %>%
         outcome(prob = probabilities[i,])
+      # Add guesses to counter
+      ml[[3]][, i + 1] <- 1
     }
   } else {
     warning("Please specify a strategy to be used!")
@@ -400,7 +569,7 @@ sim_handler_guesses <- function(strategy, environment, strat_var = NA, size) {
 }
 ```
 
-#### The matching handler:
+##### The matching handler
 
 This function determines expected choices based on given data.
 ```{r Matching Handler, eval=FALSE}
@@ -441,13 +610,15 @@ match_handler <- function(ml, strategy, strat_var = NA) {
     }
     best_choice %<>%
       transmute(best = ifelse(acurve > bcurve, "A", ifelse(acurve == bcurve, "Guess", "B"))) %>% unlist
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_omni(dim(ml[[1]][1:i]), best_choice)
+      dfexpectations[, i + 1] <- strat_omni(best_choice[i], nrow_of_df)
     }
   } else if (strategy == "guessing") {
     # Guessing
+    nrow_of_df <- nrow(ml[[1]])
     for (i in 1:(ncol(ml[[1]]) - 1)) { # Iterate over strategy
-      dfexpectations[, i + 1] <- strat_guessing(nrow(ml[[1]]))
+      dfexpectations[, i + 1] <- strat_guessing(nrow_of_df)
     }
   } else {
     warning("Please specify a strategy to be used!")
@@ -475,7 +646,7 @@ matching <- function(experienced, expected) {
 }
 ```
 
-### Strategies {.tabset .tabset-fade}
+#### Strategies {.tabset .tabset-fade}
 
 We compare four strategies, two defined by Juslin and colleagues and two normative strategies. The strategies are:  
  * A **Positivist** strategy: no constructed memory for the not-chosen option  
@@ -485,7 +656,7 @@ We compare four strategies, two defined by Juslin and colleagues and two normati
 
 The positivist and constructivist strategies are both based on windows of varying size.
 
-#### Windows
+##### Windows
 ```{r Positivist, eval=FALSE}
 ### Windows
 strat_positivist <- function(dfpositivist) {
@@ -497,7 +668,7 @@ strat_positivist <- function(dfpositivist) {
 }
 ```
 
-#### Constructivist Coding
+##### Constructivist Coding
 ```{r Constructivist, eval=FALSE}
 ### Constructivist
 strat_constr <- function(dfconstr) {
@@ -514,14 +685,14 @@ strat_constr <- function(dfconstr) {
 }
 ```
 
-#### Omniscient
+##### Omniscient
 ```{r Omniscient, eval=FALSE}
 strat_omni <- function(dfomni, best) {
  rep(best[dfomni[2]], dfomni[1])
 }
 ```
 
-#### Guessing
+##### Guessing
 ```{r Guessing, eval=FALSE}
 ### Guessing
 strat_guessing <- function(dfguess) {
@@ -529,93 +700,3 @@ strat_guessing <- function(dfguess) {
   rep("Guess", dfguess)
 }
 ```
-
-
-
-
-## Simulations {.tabset .tabset-fade}
-
-### Most successful strategy {.tabset .tabset-fade}
-
-```{r sim_load, include=FALSE}
-load(here("Output/sim_results.RData"))
-sim_length <- nrow(success_results)
-```
-
-First, which strategy is most successful? We ran `r sim_length` iterations of the simulation.
-
-```{r sim_descriptive, echo=FALSE}
-# Descriptive
-success_results %>%
-  group_by(strategy, environment) %>%
-  summarize(max = max(success),
-            avg = mean(success),
-            min = min(success)) %>%
-  knitr::kable(caption = "Descriptive statistics") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-
-#### Static
-```{r sim_graph_static, echo=FALSE}
-# Descriptive
-success_results %>%
-  ggplot(aes(x = window,
-             y = success,
-             shape = environment,
-             color = strategy)) +
-  geom_point() +
-  scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
-```
-
-#### Dynamic
-```{r sim_graph_dynamic, echo=FALSE}
-# Descriptive
-p <- success_results %>%
-  ggplot(aes(x = window,
-             y = success,
-             shape = environment,
-             color = strategy)) +
-  geom_point() +
-  scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
-ggplotly(p)
-```
-
-## Paper
-
-### Theory
-Much about our surrounding environment follows cyclic patterns. As the earth orbits the sun, day and night alternate while seasons come and go. These largescale patterns then dictate patterns in our lives: We tend to structure our awake time around day and night times and we tend to engage in different activities depending on the time of the year. For many, the seasons influence the available foods and for many workers (e.g. farmers) the seasons prescribe the type of work currently to be done. Cyclic patterns are everywhere in life.  
-
-However, the current decision making literature does not seem to represent this supposition adequately. Most paradigms that involve decisions between two or more options have either static outcome probabilities or include but a single change (gradual or abrupt) <citations>. Only few studies include cyclic variations in the outcome probabilities (e.g. Bott & Heit, 2004). This not only limits the external validity of studies but, far more fundamentally, affects the decision strategies to be invested. For example, probability matching becomes a powerful, adaptive strategy once there are patterns to be detected (Gaissmeier, xxx) while at the same time its precise definition in a cyclic environment becomes unclear. And foraging theories need to account for continuous exploration, or at the least flexibility during exploitation phases as maximizing alone will not be an adaptive behavior.  
-
-Here, we create a two-armed bandit task with continuously, sinusoidally interweaving outcome probabilities and simulate three decision making strategies (decision windows, recency weighting, and constructivist coding) as well as two normative strategies (guessing and omniscient). We then have participants complete the bandit task and match these strategies to their behavior. The two normativce strategies serve as benchmarks for behavior.
-
-### Strategies 
-Two- or multi-armed bandit tasks have become somewhat of a gold standard in the decision making literature. They allow for a controlled environment in which to analyse participants' behavior and then match their behavior to predictions made by decision strategies.  
-
-(...)  
-
-Three such families of strategies we will investigate closer.
-
-#### Windows
-
-Kareev (1995, 1997) argues that small samples hava an advantage in detecting correlation due to the stronger skew of the covariation the smaller the sample is. This proposition was quickly picked up by others. For example, Hertwig and Todd (2005) and Kareev (2000) argue that cognitive limitations are, in fact, adaptive as they allow for quicker learning of contingencies. Furthermore, the cognitive limitations make it implausible that humans can always keep track of the full outcome history in order to determine the next choice. Instead, it is a reasonable assumption that only the last few trials, a recent historic window, are used to determine the next choice (Otto et al., 2011).  
-
-#### Constructivist Coding
-
-Until now, all strategies assumed that the decision maker receives feedback on every trial and ignores non-feedback trials (such as the option not chosen). Costructivist Coding, however, proposes that in the absense of feedback, decision makers memorize the expected outcome. Future decisions will then be based not only on experienced outcomes but also on constructed outcomes where necessary (Elwin, Juslin, Olsson, & Enkvist, 2007; Ghaffarzadegan & Stewart, 2011; Henriksson, Elwin, & Juslin, 2010). In bandit tasks in which the decision maker only receives feedback for the chosen outcome, an outcome for the alternative option might be constructed for every single trial.  
-
-### Methods 
-
-#### Simulations
-Part I: Simulation of strategies. Performance. Which strategies perform best. Why?  
-
-#### Experiment
-Part II: Matching to participant data. What do participants seem to do?
-
-### Results
-Which strategies perform best and why, what do people seem to do.
-
-### Discussion
-Match or discrepancy of simulation and experiment?
