@@ -148,7 +148,7 @@ tibble(x = 1:14,
 
 
 ### Simulation----
-n <- 1000 # number of "participants"
+n <- 10000 # number of "participants"
 c <- 1 # counter
 strats <- c("positivist", "constructivist", "guessing", "omniscient") # strategies
 envs <- c("positive", "neutral", "negative") # environments
@@ -224,22 +224,27 @@ success_results %<>%
          success = as.numeric(success),
          runs = n)
 
-save(success_results, file = "Output/sim_results.RData")
+# save(success_results, file = "Output/sim_results.RData")
+load("Output/sim_results.RData")
 
 ## Most successful strategy
 # Descriptive
 success_results %>%
   group_by(strategy, environment) %>%
-  summarize(max = max(success),
-            min = min(success),
-            avg = mean(success))
+  summarize(
+    max = max(success),
+    min = min(success),
+    avg = mean(success)
+  )
 
 # Graph
 success_results %>%
-  ggplot(aes(x = window,
-             y = success,
-             shape = environment,
-             color = strategy)) +
+  ggplot(aes(
+    x = window,
+    y = success,
+    shape = environment,
+    color = strategy
+  )) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
   theme_minimal()
@@ -247,7 +252,7 @@ success_results %>%
 # Most successful window sizes
 success_results %>%
   filter(strategy %in% c("positivist", "constructivist")) %>%
-  group_by(strategy) %>%
+  group_by(strategy, environment) %>%
   top_n(3, success)
 
 # Most successful strategies
@@ -274,6 +279,99 @@ success_results %>%
   ggplot(aes(x = window,
              y = guesses,
              shape = environment,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal()
+
+
+### Matching----
+source("Data/import_dynen_2015-12-17_18-08.r")
+# Setup dataframe
+df <- data %>%
+  filter(MODE == "interview") %>% # Remove pretesting
+  filter(LASTPAGE > 28) %>% # Only finished interview
+  rename(account = PH14_01,
+         condition_orig = PH15_01,
+         age = DE02_01,
+         gender = DE07) %>%
+  mutate(condition = factor(condition_orig, levels = 1:6, labels = c("Apos", "Bpos", "Aneg", "Bneg", "Aneu", "Bneu"))) %>%
+  select(-one_of(paste0("BU04_", 19:99), paste0("BU04_", 19:99, "a"))) %>% # remove empty columns
+  select(-ends_with("a")) %>% # Remove reaction times
+  mutate_at(vars(contains("BU0")),
+            funs(as.integer(.))) %>%
+  mutate_at(vars(contains("BU0")),
+            funs(ifelse(substr(condition, 1, 1) == "A", ., ifelse(. == 1, 2, 1)))) # Undo counterbalancing
+
+# Extract choices and outcomes
+participants <- map2(.x = df %>%
+                       select(contains("PH09"),
+                              contains("PH10"),
+                              contains("PH11"),
+                              contains("PH12")),
+                     .y = df %>%
+                       select(contains("BU01"),
+                              contains("BU02"),
+                              contains("BU03"),
+                              contains("BU04")) %>%
+                       select(-contains("a")),
+                     .f = ~ cbind(.x, .y)) %>%
+  map(~ as_tibble(.x)) %>%
+  map(~ rename(.x,
+               outcome = `.x`,
+               option = `.y`)) %>%
+  map(~ mutate(.x,
+               result = ifelse(outcome == 1,
+                               ifelse(option == 1, "wA", "wB"),
+                               ifelse(option == 1, "lA", "lB")))) %>%
+  map(~ select(.x, result)) %>%
+  do.call("cbind", .)
+# Rename columns (tibbles require unique column names)
+colnames(participants) <- paste0("trial", 1:315)
+# Bring into right format for handlers
+participants <- as_tibble(participants)
+
+## Matching over all strategies
+c <- 1 # counter
+strats <- c("positivist", "constructivist", "guessing", "omniscient") # strategies
+winds <- c(1:14, seq(15, 315, by = 15)) # Window sizes
+match_results <- tibble(strategy = "test",
+                        window = 0,
+                        match = 0) # Tibble for outcomes
+# Set up progress bar
+progress <- txtProgressBar(1, (length(strats) - 2) * length(winds) + 2, style = 3)
+
+for (s in strats) {
+  if (s %in% c("omniscient", "guessing")) {
+    match_results[c, ] <- c(s, 1, matcher(participants, s, 1))
+    
+    # Show progress bar
+    setTxtProgressBar(progress, c)
+    # Update counter
+    c <- c + 1
+  } else {
+    for (w in winds) {
+      match_results[c, ] <- c(s, w, matcher(participants, s, w))
+      # Show progress bar
+      setTxtProgressBar(progress, c)
+      # Update counter
+      c <- c + 1
+    }
+  }
+}
+# Prepare results
+match_results %<>%
+  mutate(strategy = factor(strategy, levels = strats),
+         window = factor(window, levels = winds),
+         match = as.numeric(match))
+
+# save(match_results, file = "Output/match_results.RData")
+load("Output/match_results.RData")
+
+
+match_results %>%
+  ggplot(aes(x = window,
+             y = match,
              color = strategy)) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
