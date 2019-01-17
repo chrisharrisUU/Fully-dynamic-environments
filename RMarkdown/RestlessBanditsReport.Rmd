@@ -97,18 +97,18 @@ Discussion: Either people are reasonably good with cyclicity or our theoretical 
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 
-Run everything as window strategies, either with or without constructed memory. Window sizes range from 1 to the max window size currently defined -> "growing windows". The max windows will range from 1 (WSLS) to all previous trials. However, to save time we will likely cut some corners, e.g. win_max = 1 - 14, 20, 40, ... all ("maximal window"). 
+Run everything as window strategies, either with or without constructed memory. The max windows will range from 1 (WSLS) to all previous trials ("growing windows"). I strategy utilizing a window of size 20 for example, will therefore make predictions from the first trial on using the available data up to a window size of 20. However, to save time we will likely cut some corners, e.g. win_max = 1 - 14, 20, 40, ... all ("maximal window"). Right now I run window sizes 1-14 and from 15 - 315 in steps of 15 (15, 30, ... 300, 315).  
 
 
 ## Simulations {.tabset .tabset-fade}
-
-### Most successful strategy {.tabset .tabset-fade}
 
 ```{r sim_load, include=FALSE}
 load(here("Output/sim_results.RData"))
 ```
 
-First, which strategy is most successful? We ran `r success_results$runs[1]` iterations of the simulation.
+### Most successful strategy {.tabset .tabset-fade}
+
+First, which strategy is most successful? We ran `r format(success_results$runs[1], scientific = FALSE)` iterations of the simulation.
 
 #### Overview
 ```{r sim_descriptive, echo=FALSE}
@@ -132,7 +132,8 @@ success_results %>%
              color = strategy)) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
 ```
 
 #### Dynamic
@@ -145,34 +146,16 @@ p <- success_results %>%
              color = strategy)) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
 ggplotly(p)
 ```
 
 #### Top strategies
 ```{r}
-# Most successful window sizes
-success_results %>%
-  filter(strategy %in% c("positivist", "constructivist")) %>%
-  group_by(strategy) %>%
-  top_n(3, success) %>%
-  knitr::kable(caption = "Most successful window sizes") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-
-```{r}
-# Most successful strategies
-success_results %>%
-  filter(strategy != "omniscient") %>%
-  top_n(3, success) %>%
-  arrange(desc(success)) %>%
-  knitr::kable(caption = "Most successful strategy") %>%
-  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
-```
-
-```{r}
 # Most successful strategies compared to normative omniscient strategy
 success_results %>%
+  group_by(environment) %>%
   top_n(3, success) %>%
   arrange(desc(success)) %>%
   knitr::kable(caption = "Most successful strategies compared to normative omniscient strategy") %>%
@@ -202,7 +185,8 @@ success_results %>%
              color = strategy)) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
 ```
 
 #### Dynamic
@@ -215,8 +199,68 @@ p <- success_results %>%
              color = strategy)) +
   geom_point() +
   scale_color_brewer(palette = "Dark2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
 ggplotly(p)
+```
+
+## Matching {.tabset .tabset-fade}
+
+```{r match_load, include=FALSE}
+load(here("Output/match_results.RData"))
+```
+
+Second, what did participants actually do?  
+
+The Guessing strategy has a match of 0 because we currently completely ignore guesses, only counting matches on actual choices.
+
+### Overview
+```{r match_descriptive, echo=FALSE}
+# Descriptive
+match_results %>%
+  group_by(strategy) %>%
+  summarize(max = round(max(match), 2),
+            avg = round(mean(match), 2),
+            min = round(min(match), 2)) %>%
+  knitr::kable(caption = "Descriptive statistics") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
+```
+
+### Static
+```{r match_graph_static, echo=FALSE}
+# Descriptive
+match_results %>%
+  ggplot(aes(x = window,
+             y = match,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+### Dynamic
+```{r match_graph_dynamic, echo=FALSE}
+# Descriptive
+p <- match_results %>%
+  ggplot(aes(x = window,
+             y = match,
+             color = strategy)) +
+  geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45))
+ggplotly(p)
+```
+
+### Top strategies
+```{r}
+# Most successful strategies compared to normative omniscient strategy
+match_results %>%
+  top_n(3, match) %>%
+  arrange(desc(match)) %>%
+  knitr::kable(caption = "Best matching strategies") %>%
+  kable_styling(bootstrap_options = "hover", full_width = F, position = "center")
 ```
 
 ## Paper
@@ -233,7 +277,7 @@ Two- or multi-armed bandit tasks have become somewhat of a gold standard in the 
 
 (...)  
 
-Three such families of strategies we will investigate closer.
+Following Juslin et al.'s classification, we investigate two such families of strategies closer.
 
 #### Windows
 
