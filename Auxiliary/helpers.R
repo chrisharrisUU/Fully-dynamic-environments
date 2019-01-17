@@ -95,3 +95,38 @@ enumerate <- function(run) {
               choice = ifelse(pers == "A", a, b),
               trial = 1:n())
 }
+
+# Runs matching
+matcher <- function(participants, s, w) {
+  # Prepare list for handlers
+  constructed <- matrix(nrow = nrow(participants),
+                        ncol = ncol(participants)) %>%
+    data.frame() %>%
+    transmute_all(.funs = funs(as.character(.))) %>%
+    as_tibble()
+  memory <- list(participants, constructed)
+  rm(constructed)
+  
+  # Run match handler
+  expected <- match_handler(memory, s, w)
+  
+  # Match
+  match <- map2(.x = participants,
+                .y = expected,
+                .f = ~ cbind(.x, .y)) %>%
+    map(~ as_tibble(.x)) %>%
+    map(~ rename(.x,
+                 participant = `.x`,
+                 expected = `.y`)) %>%
+    map(~ mutate(.x,
+                 match = ifelse(substr(participant, 2, 2) == expected, 1, 0))) %>%
+    map(~ select(.x, match)) %>%
+    do.call("cbind", .)
+  # Rename columns
+  colnames(match) <- paste0("trial", 1:315)
+  
+  # Output mean
+  match %>%
+    rowSums(na.rm = TRUE) %>%
+    mean()
+}
